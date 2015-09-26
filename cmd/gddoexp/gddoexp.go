@@ -1,6 +1,6 @@
 // gddoexp is a command line tool crated to list eligible packages for
 // archiving in GoDoc.org
-package gddoexp
+package main
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 func main() {
 	db, err := database.New()
 	if err != nil {
-		fmt.Println("error creating database:", err)
+		fmt.Println("error connecting to database:", err)
 		return
 	}
 
