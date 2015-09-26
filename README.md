@@ -1,8 +1,8 @@
 # gddoexp
 
 Project created to indicate if a package from GoDoc should be archived. Idea
-was born from [issue 320](https://github.com/golang/gddo/issues/320) of (gddo
-project)[https://github.com/golang/gddo] by @garyburd.
+was born from [issue 320](https://github.com/golang/gddo/issues/320) of [gddo
+project](https://github.com/golang/gddo) by @garyburd.
 
 ## Install
 
