@@ -1,2 +1,17 @@
 # gddoexp
-Command line tool to list eligible packages for archiving
+
+Project created to indicate if a package from GoDoc should be archived. Idea
+was born from [issue 320](https://github.com/golang/gddo/issues/320) of (gddo
+project)[https://github.com/golang/gddo] by @garyburd.
+
+## Install
+
+```
+go get -u github.com/rafaeljusto/gddoexp/...
+```
+
+## Command line usage
+
+```
+% gddoexp
+```
