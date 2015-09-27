@@ -4,12 +4,24 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	"os"
+	"path"
 
 	"github.com/golang/gddo/database"
+	"github.com/gregjones/httpcache"
+	"github.com/gregjones/httpcache/diskcache"
 	"github.com/rafaeljusto/gddoexp"
 )
 
 func main() {
+	// add cache to avoid to repeated requests to Github
+	gddoexp.HTTPClient = &http.Client{
+		Transport: httpcache.NewTransport(
+			diskcache.New(path.Join(os.Getenv("HOME"), ".gddoexp")),
+		),
+	}
+
 	db, err := database.New()
 	if err != nil {
 		fmt.Println("error connecting to database:", err)
