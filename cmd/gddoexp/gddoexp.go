@@ -34,11 +34,11 @@ func main() {
 		return
 	}
 
-	for _, pkg := range pkgs {
-		if archive, err := gddoexp.ShouldArchivePackage(pkg.Path, db); err != nil {
+	for response := range gddoexp.ShouldArchivePackages(pkgs, db) {
+		if response.Error != nil {
 			fmt.Println(err)
-		} else if archive {
-			fmt.Printf("package “%s” should be archived\n", pkg.Path)
+		} else if response.Archive {
+			fmt.Printf("package “%s” should be archived\n", response.Path)
 		}
 	}
 }

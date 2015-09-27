@@ -6,9 +6,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/aryann/difflib"
+	"github.com/davecgh/go-spew/spew"
+	"github.com/golang/gddo/database"
 	"github.com/rafaeljusto/gddoexp"
 )
 
@@ -140,6 +144,66 @@ func TestShouldArchivePackage(t *testing.T) {
 	}
 }
 
+func TestShouldArchivePackages(t *testing.T) {
+	data := []struct {
+		description string
+		packages    []database.Package
+		db          databaseMock
+		httpClient  httpClientMock
+		expected    []gddoexp.Response
+	}{
+		{
+			description: "it should archive a package",
+			packages: []database.Package{
+				{Path: "github.com/rafaeljusto/gddoexp"},
+			},
+			db: databaseMock{
+				importerCountMock: func(path string) (int, error) {
+					return 0, nil
+				},
+			},
+			httpClient: httpClientMock{
+				getMock: func(url string) (*http.Response, error) {
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Body: ioutil.NopCloser(bytes.NewBufferString(`{
+  "created_at": "2010-08-03T21:56:23Z",
+  "forks_count": 194,
+  "network_count": 194,
+  "stargazers_count": 1133,
+  "updated_at": "` + time.Now().Add(-2*365*24*time.Hour).Format(time.RFC3339) + `"
+}`)),
+					}, nil
+				},
+			},
+			expected: []gddoexp.Response{
+				{
+					Path:    "github.com/rafaeljusto/gddoexp",
+					Archive: true,
+				},
+			},
+		},
+	}
+
+	httpClientBkp := gddoexp.HTTPClient
+	defer func() {
+		gddoexp.HTTPClient = httpClientBkp
+	}()
+
+	for i, item := range data {
+		gddoexp.HTTPClient = item.httpClient
+
+		var responses []gddoexp.Response
+		for response := range gddoexp.ShouldArchivePackages(item.packages, item.db) {
+			responses = append(responses, response)
+		}
+
+		if !reflect.DeepEqual(item.expected, responses) {
+			t.Errorf("[%d] %s: mismatch responses.\n%v", i, item.description, diff(item.expected, responses))
+		}
+	}
+}
+
 type databaseMock struct {
 	importerCountMock func(string) (int, error)
 }
@@ -154,4 +218,11 @@ type httpClientMock struct {
 
 func (h httpClientMock) Get(url string) (*http.Response, error) {
 	return h.getMock(url)
+}
+
+func diff(a, b interface{}) []difflib.DiffRecord {
+	return difflib.Diff(
+		strings.SplitAfter(spew.Sdump(a), "\n"),
+		strings.SplitAfter(spew.Sdump(b), "\n"),
+	)
 }
