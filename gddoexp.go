@@ -10,6 +10,10 @@ import (
 // unused stores the time that an unmodified project is considered unused.
 const unused = 2 * 365 * 24 * time.Hour
 
+// agents contains the number of concurrent go routines that will process
+// a list of packages
+const agents = 10
+
 // gddoexpDB contains all used methods from Database type of
 // github.com/golang/gddo/database. This is useful for mocking and building
 // tests.
@@ -52,28 +56,35 @@ func ShouldArchivePackage(path string, db gddoexpDB) (bool, error) {
 func ShouldArchivePackages(packages []database.Package, db gddoexpDB) <-chan Response {
 	out := make(chan Response)
 
-	var finished struct {
-		int
-		sync.Mutex
-	}
+	go func() {
+		var wg sync.WaitGroup
+		wg.Add(agents)
 
-	for _, pkg := range packages {
-		go func() {
-			archive, err := ShouldArchivePackage(pkg.Path, db)
-			out <- Response{
-				Path:    pkg.Path,
-				Archive: archive,
-				Error:   err,
-			}
+		in := make(chan string)
 
-			finished.Lock()
-			finished.int++
-			if finished.int == len(packages) {
-				close(out)
-			}
-			finished.Unlock()
-		}()
-	}
+		for i := 0; i < agents; i++ {
+			go func() {
+				for path := range in {
+					archive, err := ShouldArchivePackage(path, db)
+					out <- Response{
+						Path:    path,
+						Archive: archive,
+						Error:   err,
+					}
+				}
+
+				wg.Done()
+			}()
+		}
+
+		for _, pkg := range packages {
+			in <- pkg.Path
+		}
+
+		close(in)
+		wg.Wait()
+		close(out)
+	}()
 
 	return out
 }
