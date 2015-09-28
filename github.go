@@ -39,7 +39,9 @@ func getGithubInfo(path string) (githubInfo, error) {
 		return info, NewError(path, ErrorCodeNonGithub, nil)
 	}
 
-	url := "https://api.github.com/repos/" + strings.TrimPrefix(path, "github.com/")
+	normalizedPath := strings.TrimPrefix(path, "github.com/")
+	normalizedPath = strings.Join(strings.Split(normalizedPath, "/")[:2], "/")
+	url := "https://api.github.com/repos/" + normalizedPath
 
 	rsp, err := HTTPClient.Get(url)
 	if err != nil {

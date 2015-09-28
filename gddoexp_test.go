@@ -46,6 +46,84 @@ func TestShouldArchivePackage(t *testing.T) {
 			expected: true,
 		},
 		{
+			description: "it shouldn't archive a package because of recent commit",
+			path:        "github.com/rafaeljusto/gddoexp",
+			db: databaseMock{
+				importerCountMock: func(path string) (int, error) {
+					return 0, nil
+				},
+			},
+			httpClient: httpClientMock{
+				getMock: func(url string) (*http.Response, error) {
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Body: ioutil.NopCloser(bytes.NewBufferString(`{
+  "created_at": "2010-08-03T21:56:23Z",
+  "forks_count": 194,
+  "network_count": 194,
+  "stargazers_count": 1133,
+  "updated_at": "` + time.Now().Add(-2*364*24*time.Hour).Format(time.RFC3339) + `"
+}`)),
+					}, nil
+				},
+			},
+			expected: false,
+		},
+		{
+			description: "it shouldn't archive a package because of import reference",
+			path:        "github.com/rafaeljusto/gddoexp",
+			db: databaseMock{
+				importerCountMock: func(path string) (int, error) {
+					return 1, nil
+				},
+			},
+			httpClient: httpClientMock{
+				getMock: func(url string) (*http.Response, error) {
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Body: ioutil.NopCloser(bytes.NewBufferString(`{
+  "created_at": "2010-08-03T21:56:23Z",
+  "forks_count": 194,
+  "network_count": 194,
+  "stargazers_count": 1133,
+  "updated_at": "` + time.Now().Add(-2*365*24*time.Hour).Format(time.RFC3339) + `"
+}`)),
+					}, nil
+				},
+			},
+			expected: false,
+		},
+		{
+			description: "it should archive a package (project subpath)",
+			path:        "github.com/rafaeljusto/gddoexp/cmd/gddoexp",
+			db: databaseMock{
+				importerCountMock: func(path string) (int, error) {
+					return 0, nil
+				},
+			},
+			httpClient: httpClientMock{
+				getMock: func(url string) (*http.Response, error) {
+					if url != "https://api.github.com/repos/rafaeljusto/gddoexp" {
+						return &http.Response{
+							StatusCode: http.StatusBadRequest,
+						}, nil
+					}
+
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Body: ioutil.NopCloser(bytes.NewBufferString(`{
+  "created_at": "2010-08-03T21:56:23Z",
+  "forks_count": 194,
+  "network_count": 194,
+  "stargazers_count": 1133,
+  "updated_at": "` + time.Now().Add(-2*365*24*time.Hour).Format(time.RFC3339) + `"
+}`)),
+					}, nil
+				},
+			},
+			expected: true,
+		},
+		{
 			description: "it should fail to retrive the import counts from GoDoc database",
 			path:        "github.com/rafaeljusto/gddoexp",
 			db: databaseMock{
