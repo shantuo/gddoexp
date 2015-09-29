@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -207,7 +208,11 @@ func TestShouldArchivePackage(t *testing.T) {
 	for i, item := range data {
 		gddoexp.HTTPClient = item.httpClient
 
-		archive, err := gddoexp.ShouldArchivePackage(item.path, item.db)
+		p := database.Package{
+			Path: item.path,
+		}
+
+		archive, err := gddoexp.ShouldArchivePackage(p, item.db)
 		if archive != item.expected {
 			if item.expected {
 				t.Errorf("[%d] %s: expected package to be archived", i, item.description)
@@ -234,6 +239,10 @@ func TestShouldArchivePackages(t *testing.T) {
 			description: "it should archive a package",
 			packages: []database.Package{
 				{Path: "github.com/rafaeljusto/gddoexp"},
+				{Path: "github.com/golang/gddo"},
+				{Path: "github.com/miekg/dns"},
+				{Path: "github.com/docker/docker"},
+				{Path: "github.com/golang/go"},
 			},
 			db: databaseMock{
 				importerCountMock: func(path string) (int, error) {
@@ -256,6 +265,22 @@ func TestShouldArchivePackages(t *testing.T) {
 			},
 			expected: []gddoexp.Response{
 				{
+					Path:    "github.com/docker/docker",
+					Archive: true,
+				},
+				{
+					Path:    "github.com/golang/gddo",
+					Archive: true,
+				},
+				{
+					Path:    "github.com/golang/go",
+					Archive: true,
+				},
+				{
+					Path:    "github.com/miekg/dns",
+					Archive: true,
+				},
+				{
 					Path:    "github.com/rafaeljusto/gddoexp",
 					Archive: true,
 				},
@@ -276,6 +301,7 @@ func TestShouldArchivePackages(t *testing.T) {
 			responses = append(responses, response)
 		}
 
+		sort.Sort(byPath(responses))
 		if !reflect.DeepEqual(item.expected, responses) {
 			t.Errorf("[%d] %s: mismatch responses.\n%v", i, item.description, diff(item.expected, responses))
 		}
@@ -304,3 +330,9 @@ func diff(a, b interface{}) []difflib.DiffRecord {
 		strings.SplitAfter(spew.Sdump(b), "\n"),
 	)
 }
+
+type byPath []gddoexp.Response
+
+func (b byPath) Len() int           { return len(b) }
+func (b byPath) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+func (b byPath) Less(i, j int) bool { return b[i].Path < b[j].Path }
