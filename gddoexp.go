@@ -14,10 +14,10 @@ const unused = 2 * 365 * 24 * time.Hour
 // a list of packages
 const agents = 10
 
-// gddoexpDB contains all used methods from Database type of
+// gddoDB contains all used methods from Database type of
 // github.com/golang/gddo/database. This is useful for mocking and building
 // tests.
-type gddoexpDB interface {
+type gddoDB interface {
 	ImporterCount(string) (int, error)
 }
 
@@ -32,13 +32,13 @@ type Response struct {
 // ShouldArchivePackage determinates if a package should be archived or not.
 // It's necessary to inform the GoDoc database to retrieve current stored
 // package information.
-func ShouldArchivePackage(path string, db gddoexpDB) (bool, error) {
-	count, err := db.ImporterCount(path)
+func ShouldArchivePackage(p database.Package, db gddoDB) (bool, error) {
+	count, err := db.ImporterCount(p.Path)
 	if err != nil {
-		return false, NewError(path, ErrorCodeRetrieveImportCounts, err)
+		return false, NewError(p.Path, ErrorCodeRetrieveImportCounts, err)
 	}
 
-	info, err := getGithubInfo(path)
+	info, err := getGithubInfo(p.Path)
 	if err != nil {
 		return false, err
 	}
@@ -53,21 +53,21 @@ func ShouldArchivePackage(path string, db gddoexpDB) (bool, error) {
 // but unlike ShouldArchivePackage, it can process a list of packages
 // concurrently. It's necessary to inform the GoDoc database to retrieve
 // current stored package information.
-func ShouldArchivePackages(packages []database.Package, db gddoexpDB) <-chan Response {
+func ShouldArchivePackages(packages []database.Package, db gddoDB) <-chan Response {
 	out := make(chan Response)
 
 	go func() {
 		var wg sync.WaitGroup
 		wg.Add(agents)
 
-		in := make(chan string)
+		in := make(chan database.Package)
 
 		for i := 0; i < agents; i++ {
 			go func() {
-				for path := range in {
-					archive, err := ShouldArchivePackage(path, db)
+				for p := range in {
+					archive, err := ShouldArchivePackage(p, db)
 					out <- Response{
-						Path:    path,
+						Path:    p.Path,
 						Archive: archive,
 						Error:   err,
 					}
@@ -78,7 +78,7 @@ func ShouldArchivePackages(packages []database.Package, db gddoexpDB) <-chan Res
 		}
 
 		for _, pkg := range packages {
-			in <- pkg.Path
+			in <- pkg
 		}
 
 		close(in)
