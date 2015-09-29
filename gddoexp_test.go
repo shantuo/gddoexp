@@ -22,12 +22,13 @@ func TestShouldArchivePackage(t *testing.T) {
 		description   string
 		path          string
 		db            databaseMock
+		auth          *gddoexp.GithubAuth
 		httpClient    httpClientMock
 		expected      bool
 		expectedError error
 	}{
 		{
-			description: "it should archive a package",
+			description: "it should archive a package (without authentication)",
 			path:        "github.com/rafaeljusto/gddoexp",
 			db: databaseMock{
 				importerCountMock: func(path string) (int, error) {
@@ -36,6 +37,46 @@ func TestShouldArchivePackage(t *testing.T) {
 			},
 			httpClient: httpClientMock{
 				getMock: func(url string) (*http.Response, error) {
+					if url != "https://api.github.com/repos/rafaeljusto/gddoexp" {
+						return &http.Response{
+							StatusCode: http.StatusBadRequest,
+						}, nil
+					}
+
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Body: ioutil.NopCloser(bytes.NewBufferString(`{
+  "created_at": "2010-08-03T21:56:23Z",
+  "forks_count": 194,
+  "network_count": 194,
+  "stargazers_count": 1133,
+  "updated_at": "` + time.Now().Add(-2*365*24*time.Hour).Format(time.RFC3339) + `"
+}`)),
+					}, nil
+				},
+			},
+			expected: true,
+		},
+		{
+			description: "it should archive a package (authenticated)",
+			path:        "github.com/rafaeljusto/gddoexp",
+			db: databaseMock{
+				importerCountMock: func(path string) (int, error) {
+					return 0, nil
+				},
+			},
+			auth: &gddoexp.GithubAuth{
+				ID:     "exampleuser",
+				Secret: "abc123",
+			},
+			httpClient: httpClientMock{
+				getMock: func(url string) (*http.Response, error) {
+					if url != "https://api.github.com/repos/rafaeljusto/gddoexp?client_id=exampleuser&client_secret=abc123" {
+						return &http.Response{
+							StatusCode: http.StatusBadRequest,
+						}, nil
+					}
+
 					return &http.Response{
 						StatusCode: http.StatusOK,
 						Body: ioutil.NopCloser(bytes.NewBufferString(`{
@@ -212,7 +253,7 @@ func TestShouldArchivePackage(t *testing.T) {
 			Path: item.path,
 		}
 
-		archive, err := gddoexp.ShouldArchivePackage(p, item.db)
+		archive, err := gddoexp.ShouldArchivePackage(p, item.db, item.auth)
 		if archive != item.expected {
 			if item.expected {
 				t.Errorf("[%d] %s: expected package to be archived", i, item.description)
@@ -232,11 +273,12 @@ func TestShouldArchivePackages(t *testing.T) {
 		description string
 		packages    []database.Package
 		db          databaseMock
+		auth        *gddoexp.GithubAuth
 		httpClient  httpClientMock
 		expected    []gddoexp.Response
 	}{
 		{
-			description: "it should archive a package",
+			description: "it should archive all the packages (without authentication)",
 			packages: []database.Package{
 				{Path: "github.com/rafaeljusto/gddoexp"},
 				{Path: "github.com/golang/gddo"},
@@ -286,6 +328,67 @@ func TestShouldArchivePackages(t *testing.T) {
 				},
 			},
 		},
+		{
+			description: "it should archive all the packages (authenticated)",
+			packages: []database.Package{
+				{Path: "github.com/rafaeljusto/gddoexp"},
+				{Path: "github.com/golang/gddo"},
+				{Path: "github.com/miekg/dns"},
+				{Path: "github.com/docker/docker"},
+				{Path: "github.com/golang/go"},
+			},
+			db: databaseMock{
+				importerCountMock: func(path string) (int, error) {
+					return 0, nil
+				},
+			},
+			auth: &gddoexp.GithubAuth{
+				ID:     "exampleuser",
+				Secret: "abc123",
+			},
+			httpClient: httpClientMock{
+				getMock: func(url string) (*http.Response, error) {
+					if !strings.HasSuffix(url, "client_id=exampleuser&client_secret=abc123") {
+						return &http.Response{
+							StatusCode: http.StatusBadRequest,
+						}, nil
+					}
+
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Body: ioutil.NopCloser(bytes.NewBufferString(`{
+  "created_at": "2010-08-03T21:56:23Z",
+  "forks_count": 194,
+  "network_count": 194,
+  "stargazers_count": 1133,
+  "updated_at": "` + time.Now().Add(-2*365*24*time.Hour).Format(time.RFC3339) + `"
+}`)),
+					}, nil
+				},
+			},
+			expected: []gddoexp.Response{
+				{
+					Path:    "github.com/docker/docker",
+					Archive: true,
+				},
+				{
+					Path:    "github.com/golang/gddo",
+					Archive: true,
+				},
+				{
+					Path:    "github.com/golang/go",
+					Archive: true,
+				},
+				{
+					Path:    "github.com/miekg/dns",
+					Archive: true,
+				},
+				{
+					Path:    "github.com/rafaeljusto/gddoexp",
+					Archive: true,
+				},
+			},
+		},
 	}
 
 	httpClientBkp := gddoexp.HTTPClient
@@ -297,7 +400,7 @@ func TestShouldArchivePackages(t *testing.T) {
 		gddoexp.HTTPClient = item.httpClient
 
 		var responses []gddoexp.Response
-		for response := range gddoexp.ShouldArchivePackages(item.packages, item.db) {
+		for response := range gddoexp.ShouldArchivePackages(item.packages, item.db, item.auth) {
 			responses = append(responses, response)
 		}
 

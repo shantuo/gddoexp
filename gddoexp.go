@@ -29,16 +29,17 @@ type Response struct {
 	Error   error
 }
 
-// ShouldArchivePackage determinates if a package should be archived or not.
+// ShouldArchivePackage determinate if a package should be archived or not.
 // It's necessary to inform the GoDoc database to retrieve current stored
-// package information.
-func ShouldArchivePackage(p database.Package, db gddoDB) (bool, error) {
+// package information. An optional argument with the Github authentication
+// can be informed to allow more checks per minute in Github API.
+func ShouldArchivePackage(p database.Package, db gddoDB, auth *GithubAuth) (bool, error) {
 	count, err := db.ImporterCount(p.Path)
 	if err != nil {
 		return false, NewError(p.Path, ErrorCodeRetrieveImportCounts, err)
 	}
 
-	info, err := getGithubInfo(p.Path)
+	info, err := getGithubInfo(p.Path, auth)
 	if err != nil {
 		return false, err
 	}
@@ -49,11 +50,13 @@ func ShouldArchivePackage(p database.Package, db gddoDB) (bool, error) {
 	return archive, nil
 }
 
-// ShouldArchivePackages determinates if a package should be archived or not,
+// ShouldArchivePackages determinate if a package should be archived or not,
 // but unlike ShouldArchivePackage, it can process a list of packages
 // concurrently. It's necessary to inform the GoDoc database to retrieve
-// current stored package information.
-func ShouldArchivePackages(packages []database.Package, db gddoDB) <-chan Response {
+// current stored package information. An optional argument with the Github
+// authentication can be informed to allow more checks per minute in Github
+// API.
+func ShouldArchivePackages(packages []database.Package, db gddoDB, auth *GithubAuth) <-chan Response {
 	out := make(chan Response)
 
 	go func() {
@@ -65,7 +68,7 @@ func ShouldArchivePackages(packages []database.Package, db gddoDB) <-chan Respon
 		for i := 0; i < agents; i++ {
 			go func() {
 				for p := range in {
-					archive, err := ShouldArchivePackage(p, db)
+					archive, err := ShouldArchivePackage(p, db, auth)
 					out <- Response{
 						Path:    p.Path,
 						Archive: archive,

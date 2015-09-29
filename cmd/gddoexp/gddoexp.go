@@ -3,6 +3,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -15,6 +16,24 @@ import (
 )
 
 func main() {
+	clientID := flag.String("id", "", "Github client ID")
+	clientSecret := flag.String("secret", "", "Github client secret")
+	flag.Parse()
+
+	var auth *gddoexp.GithubAuth
+	if clientID != nil || clientSecret != nil {
+		if *clientID == "" || *clientSecret == "" {
+			fmt.Println("to enable Gthub authentication, you need to inform the id and secret")
+			flag.PrintDefaults()
+			return
+		}
+
+		auth = &gddoexp.GithubAuth{
+			ID:     *clientID,
+			Secret: *clientSecret,
+		}
+	}
+
 	// add cache to avoid to repeated requests to Github
 	gddoexp.HTTPClient = &http.Client{
 		Transport: httpcache.NewTransport(
@@ -36,7 +55,7 @@ func main() {
 
 	fmt.Printf("%d packages will be analyzed\n", len(pkgs))
 
-	for response := range gddoexp.ShouldArchivePackages(pkgs, db) {
+	for response := range gddoexp.ShouldArchivePackages(pkgs, db, auth) {
 		if response.Error != nil {
 			fmt.Println(err)
 		} else if response.Archive {
