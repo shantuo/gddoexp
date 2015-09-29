@@ -34,6 +34,8 @@ func main() {
 		return
 	}
 
+	fmt.Printf("%d packages will be analyzed\n", len(pkgs))
+
 	for response := range gddoexp.ShouldArchivePackages(pkgs, db) {
 		if response.Error != nil {
 			fmt.Println(err)
