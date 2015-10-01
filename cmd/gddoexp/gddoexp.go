@@ -55,7 +55,7 @@ func main() {
 
 	for response := range gddoexp.ShouldArchivePackages(pkgs, db, auth) {
 		if response.Error != nil {
-			fmt.Println(err)
+			fmt.Println(response.Error)
 		} else if response.Archive {
 			fmt.Printf("package “%s” should be archived\n", response.Path)
 		}
