@@ -3,10 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path"
 
+	"github.com/cheggaaa/pb"
 	"github.com/golang/gddo/database"
 	"github.com/gregjones/httpcache"
 	"github.com/gregjones/httpcache/diskcache"
@@ -16,6 +18,7 @@ import (
 func main() {
 	clientID := flag.String("id", "", "Github client ID")
 	clientSecret := flag.String("secret", "", "Github client secret")
+	output := flag.String("output", "gddoexp.out", "Output file")
 	flag.Parse()
 
 	var auth *gddoexp.GithubAuth
@@ -51,13 +54,27 @@ func main() {
 		return
 	}
 
-	fmt.Printf("%d packages will be analyzed\n", len(pkgs))
+	file, err := os.OpenFile(*output, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Println("error creating output file:", err)
+		return
+	}
+	defer file.Close()
 
+	log.SetOutput(file)
+	log.Println("BEGIN")
+	log.Printf("%d packages will be analyzed\n", len(pkgs))
+
+	progress := pb.StartNew(len(pkgs))
 	for response := range gddoexp.ShouldArchivePackages(pkgs, db, auth) {
+		progress.Increment()
 		if response.Error != nil {
-			fmt.Println(response.Error)
+			log.Println(response.Error)
 		} else if response.Archive {
-			fmt.Printf("package “%s” should be archived\n", response.Path)
+			log.Printf("package “%s” should be archived\n", response.Path)
 		}
 	}
+
+	progress.Finish()
+	log.Println("END")
 }
