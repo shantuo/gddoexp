@@ -1,5 +1,3 @@
-// gddoexp is a command line tool crated to list eligible packages for
-// archiving in GoDoc.org
 package main
 
 import (
@@ -34,7 +32,7 @@ func main() {
 		}
 	}
 
-	// add cache to avoid to repeated requests to Github
+	// add cache to avoid repeated requests to Github
 	gddoexp.HTTPClient = &http.Client{
 		Transport: httpcache.NewTransport(
 			diskcache.New(path.Join(os.Getenv("HOME"), ".gddoexp")),
