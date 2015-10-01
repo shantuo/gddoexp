@@ -58,8 +58,8 @@ func NewError(path string, code ErrorCode, details error) Error {
 // Error will show the error in a human readable message.
 func (e Error) Error() string {
 	if e.Details == nil {
-		return fmt.Sprintf("[%s] %s", e.Path, errorCodeMessage[e.Code])
+		return fmt.Sprintf("gddoexp: [%s] %s", e.Path, errorCodeMessage[e.Code])
 	}
 
-	return fmt.Sprintf("[%s] %s: %s", e.Path, errorCodeMessage[e.Code], e.Details)
+	return fmt.Sprintf("gddoexp: [%s] %s: %s", e.Path, errorCodeMessage[e.Code], e.Details)
 }
