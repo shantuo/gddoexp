@@ -25,10 +25,10 @@ var RateLimit = struct {
 	AuthFillInterval time.Duration
 	AuthCapacity     int64
 }{
-	FillInterval:     60 * time.Hour,
-	Capacity:         1,
-	AuthFillInterval: 5000 * time.Hour,
-	AuthCapacity:     1000,
+	FillInterval:     time.Minute,
+	Capacity:         agents,
+	AuthFillInterval: time.Second,
+	AuthCapacity:     agents,
 }
 
 // gddoDB contains all used methods from Database type of
