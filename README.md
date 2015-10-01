@@ -5,8 +5,8 @@
 gddoexp (Go Doc Dot Org Expired) was created to indicate if a package from GoDoc
 should be archived. Idea was born from [issue
 320](https://github.com/golang/gddo/issues/320) of [gddo
-project](https://github.com/golang/gddo) by @garyburd. The following rules are
-current applied to verify if a package should be archived:
+project](https://github.com/golang/gddo) by [@garyburd](https://github.com/garyburd).
+The following rules are current applied to verify if a package should be archived:
 
 * No other packages reference the analyzed package
 * Package wasn't modified is the last 2 years
