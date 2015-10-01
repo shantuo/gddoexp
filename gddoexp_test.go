@@ -396,6 +396,17 @@ func TestShouldArchivePackages(t *testing.T) {
 		gddoexp.HTTPClient = httpClientBkp
 	}()
 
+	rateLimitBkp := gddoexp.RateLimit
+	defer func() {
+		gddoexp.RateLimit = rateLimitBkp
+	}()
+
+	// Change rate limit parameters to speed up the test
+	gddoexp.RateLimit.FillInterval = time.Millisecond
+	gddoexp.RateLimit.Capacity = 100
+	gddoexp.RateLimit.AuthFillInterval = time.Millisecond
+	gddoexp.RateLimit.AuthCapacity = 100
+
 	for i, item := range data {
 		gddoexp.HTTPClient = item.httpClient
 

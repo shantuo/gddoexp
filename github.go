@@ -34,8 +34,8 @@ type githubInfo struct {
 
 // GithubAuth store the authentication information to allow a less
 // restrictive rate limit in Github API. Authenticated requests can make up
-// to 30 requests per minute, otherwise you will be limited in 10 requests per
-// minute.
+// to 5000 requests per hour, otherwise you will be limited in 60 requests
+// per hour (https://developer.github.com/v3/#rate-limiting).
 type GithubAuth struct {
 	ID     string
 	Secret string
