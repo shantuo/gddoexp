@@ -27,7 +27,7 @@ func main() {
 
 	f, err := os.Open(*file)
 	if err != nil {
-		fmt.Printf("error opening file “%s”: %s\n", file, err)
+		fmt.Printf("error opening file “%s”: %s\n", *file, err)
 		return
 	}
 	defer f.Close()
