@@ -9,7 +9,7 @@ project](https://github.com/golang/gddo) by [@garyburd](https://github.com/garyb
 The following rules are current applied to verify if a package should be archived:
 
 * No other packages reference the analyzed package
-* Package wasn't modified is the last 2 years
+* Package wasn't modified in the last 2 years
 
 ## Install
 
