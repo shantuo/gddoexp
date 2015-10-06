@@ -19,19 +19,6 @@ go get -u github.com/rafaeljusto/gddoexp/...
 
 Remember to add your `$GOPATH/bin` to your `$PATH`.
 
-## Command line usage
+## Tools
 
-```
-% gddoexp -h
-Usage of ./gddoexp:
-  -db-idle-timeout duration
-    	Close Redis connections after remaining idle for this duration. (default 4m10s)
-  -db-log
-    	Log database commands
-  -db-server string
-    	URI of Redis server. (default "redis://127.0.0.1:6379")
-  -id string
-    	Github client ID
-  -secret string
-    	Github client secret
-```
+Please check the specific documentation of each tool in the subdirectories.
