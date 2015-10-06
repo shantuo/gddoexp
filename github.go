@@ -26,6 +26,7 @@ func init() {
 // check: https://developer.github.com/v3/repos/
 type githubInfo struct {
 	CreatedAt       time.Time `json:"created_at"`
+	Fork            bool      `json:"fork"`
 	ForksCount      int       `json:"forks_count"`
 	NetworkCount    int       `json:"network_count"`
 	StargazersCount int       `json:"stargazers_count"`
