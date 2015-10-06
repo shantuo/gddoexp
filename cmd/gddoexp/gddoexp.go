@@ -19,6 +19,7 @@ func main() {
 	clientID := flag.String("id", "", "Github client ID")
 	clientSecret := flag.String("secret", "", "Github client secret")
 	output := flag.String("output", "gddoexp.out", "Output file")
+	progress := flag.Bool("progress", false, "Show a progress bar")
 	flag.Parse()
 
 	var auth *gddoexp.GithubAuth
@@ -65,16 +66,29 @@ func main() {
 	log.Println("BEGIN")
 	log.Printf("%d packages will be analyzed\n", len(pkgs))
 
-	progress := pb.StartNew(len(pkgs))
+	var progressBar *pb.ProgressBar
+	if progress != nil && *progress {
+		progressBar = pb.StartNew(len(pkgs))
+	}
+
 	for response := range gddoexp.ShouldArchivePackages(pkgs, db, auth) {
-		progress.Increment()
+		if progress != nil && *progress {
+			progressBar.Increment()
+		}
+
 		if response.Error != nil {
 			log.Println(response.Error)
 		} else if response.Archive {
 			log.Printf("package “%s” should be archived\n", response.Path)
+			if progress != nil && !*progress {
+				fmt.Println(response.Path)
+			}
 		}
 	}
 
-	progress.Finish()
+	if progress != nil && *progress {
+		progressBar.Finish()
+	}
+
 	log.Println("END")
 }
