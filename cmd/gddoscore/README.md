@@ -1,7 +1,7 @@
 # gddoscore
 
-gddoscore is a filter to identify only packages with non-zero scores. It can
-work using an input file (one package per line) or via stdin.
+gddoscore is a filter to identify packages with non-zero scores. It can work
+using an input file (one package per line) or via stdin.
 
 For example, the following command would only print the packages with score that
 should be archived:
