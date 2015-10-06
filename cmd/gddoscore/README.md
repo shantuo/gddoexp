@@ -14,7 +14,7 @@ You could also get some progress while running the filter, like the following
 example:
 
 ```
-% gddoscore -file gddoexp.txt -progress
+% gddoscore -file packages.txt -progress
 303 / 3642 [=========>-------------------------------------------] 8.32 % 1m17s
 ```
 
