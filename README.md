@@ -11,6 +11,10 @@ The following rules are current applied to verify if a package should be archive
 * No other packages reference the analyzed package
 * Package wasn't modified in the last 2 years
 
+It can also identify packages to what we call a fast fork. A fast fork package
+is a fork created to made some small changes for a pull request. Currently we
+tolerate up to 2 commits in a period of 1 week after the fork date.
+
 ## Install
 
 ```
