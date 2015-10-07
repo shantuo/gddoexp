@@ -172,7 +172,8 @@ func TestShouldArchivePackage(t *testing.T) {
 					}, nil
 				},
 			},
-			expected: false,
+			expected:      false,
+			expectedCache: true,
 		},
 		{
 			description: "it should archive a package (project subpath)",

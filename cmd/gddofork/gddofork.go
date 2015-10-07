@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/cheggaaa/pb"
+	"github.com/golang/gddo/database"
 	"github.com/rafaeljusto/gddoexp"
 )
 
@@ -35,7 +36,7 @@ func main() {
 		}
 	}
 
-	var pkgs map[string]bool
+	var pkgs []database.Package
 	var err error
 
 	if file != nil && *file != "" {
@@ -65,13 +66,20 @@ func main() {
 		progressBar = pb.StartNew(len(pkgs))
 	}
 
-	// TODO: We need to query the repository in Github [1] to see if it's a
-	// fork (forked) and than check the commits [2] to see if they were all
-	// made near the forked date (created_at). We want to detect projects
-	// created only for small pull requests.
-	//
-	// [1] https://developer.github.com/v3/repos/#get
-	// [2] https://developer.github.com/v3/repos/commits/#list-commits-on-a-repository
+	for response := range gddoexp.AreFastForkPackages(pkgs, auth) {
+		if progress != nil && *progress {
+			progressBar.Increment()
+		}
+
+		if response.Error != nil {
+			log.Println(response.Error)
+		} else if response.FastFork {
+			log.Printf("package “%s” is a fast fork\n", response.Path)
+			if progress != nil && !*progress {
+				fmt.Println(response.Path)
+			}
+		}
+	}
 
 	if progress != nil && *progress {
 		progressBar.Finish()
@@ -80,23 +88,25 @@ func main() {
 	log.Println("END")
 }
 
-func readFromFile(file string) (map[string]bool, error) {
+func readFromFile(file string) ([]database.Package, error) {
 	f, err := os.Open(file)
 	if err != nil {
 		return nil, fmt.Errorf("error opening file “%s”: %s\n", file, err)
 	}
 	defer f.Close()
 
-	pkgs := make(map[string]bool)
+	var pkgs []database.Package
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		pkgs[scanner.Text()] = true
+		pkgs = append(pkgs, database.Package{
+			Path: scanner.Text(),
+		})
 	}
 	return pkgs, nil
 }
 
-func readFromStdin() (map[string]bool, error) {
-	pkgs := make(map[string]bool)
+func readFromStdin() ([]database.Package, error) {
+	var pkgs []database.Package
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
@@ -109,7 +119,9 @@ func readFromStdin() (map[string]bool, error) {
 		}
 
 		line = strings.TrimSpace(line)
-		pkgs[line] = true
+		pkgs = append(pkgs, database.Package{
+			Path: line,
+		})
 	}
 
 	return pkgs, nil
