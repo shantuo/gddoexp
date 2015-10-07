@@ -18,6 +18,10 @@ type httpClient interface {
 // a global variable, as it is safe for concurrent use by multiple goroutines
 var HTTPClient httpClient
 
+// IsCacheResponse detects if a HTTP response was retrieved from cache or
+// not.
+var IsCacheResponse func(*http.Response) bool
+
 func init() {
 	HTTPClient = new(http.Client)
 }
@@ -44,12 +48,11 @@ type GithubAuth struct {
 
 // getGithubInfo will retrieve the path project information. For a better
 // rate limit the requests must be authenticated, for more information check:
-// https://developer.github.com/v3/search/#rate-limit
-func getGithubInfo(path string, auth *GithubAuth) (githubInfo, error) {
-	var info githubInfo
-
+// https://developer.github.com/v3/search/#rate-limit. This function also
+// returns if the response was retrieved from a local cache.
+func getGithubInfo(path string, auth *GithubAuth) (info githubInfo, cache bool, err error) {
 	if !strings.HasPrefix(path, "github.com/") {
-		return info, NewError(path, ErrorCodeNonGithub, nil)
+		return info, false, NewError(path, ErrorCodeNonGithub, nil)
 	}
 
 	normalizedPath := strings.TrimPrefix(path, "github.com/")
@@ -66,7 +69,7 @@ func getGithubInfo(path string, auth *GithubAuth) (githubInfo, error) {
 
 	rsp, err := HTTPClient.Get(url)
 	if err != nil {
-		return info, NewError(path, ErrorCodeGithubFetch, err)
+		return info, false, NewError(path, ErrorCodeGithubFetch, err)
 	}
 	defer func() {
 		if rsp.Body != nil {
@@ -76,13 +79,17 @@ func getGithubInfo(path string, auth *GithubAuth) (githubInfo, error) {
 	}()
 
 	if rsp.StatusCode != http.StatusOK {
-		return info, NewError(path, ErrorCodeGithubStatusCode, nil)
+		return info, false, NewError(path, ErrorCodeGithubStatusCode, nil)
 	}
 
 	decoder := json.NewDecoder(rsp.Body)
 	if err := decoder.Decode(&info); err != nil {
-		return info, NewError(path, ErrorCodeGithubParse, err)
+		return info, false, NewError(path, ErrorCodeGithubParse, err)
 	}
 
-	return info, nil
+	if IsCacheResponse != nil {
+		cache = IsCacheResponse(rsp)
+	}
+
+	return info, cache, nil
 }
