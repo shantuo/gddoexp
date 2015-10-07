@@ -56,12 +56,10 @@ type githubRepository struct {
 // check: https://developer.github.com/v3/search/#rate-limit. This function
 // also returns if the response was retrieved from a local cache.
 func getGithubRepository(path string, auth *GithubAuth) (repository githubRepository, cache bool, err error) {
-	if !strings.HasPrefix(path, "github.com/") {
-		return repository, false, NewError(path, ErrorCodeNonGithub, nil)
+	normalizedPath, err := normalizePath(path)
+	if err != nil {
+		return repository, false, err
 	}
-
-	normalizedPath := strings.TrimPrefix(path, "github.com/")
-	normalizedPath = strings.Join(strings.Split(normalizedPath, "/")[:2], "/")
 
 	url := "https://api.github.com/repos/" + normalizedPath
 	if auth != nil {
@@ -90,12 +88,10 @@ type githubCommits []struct {
 // check: https://developer.github.com/v3/search/#rate-limit. This function
 // also returns if the response was retrieved from a local cache.
 func getCommits(path string, auth *GithubAuth) (commits githubCommits, cache bool, err error) {
-	if !strings.HasPrefix(path, "github.com/") {
-		return commits, false, NewError(path, ErrorCodeNonGithub, nil)
+	normalizedPath, err := normalizePath(path)
+	if err != nil {
+		return commits, false, err
 	}
-
-	normalizedPath := strings.TrimPrefix(path, "github.com/")
-	normalizedPath = strings.Join(strings.Split(normalizedPath, "/")[:2], "/")
 
 	url := fmt.Sprintf("https://api.github.com/repos/%s/commits", normalizedPath)
 	if auth != nil {
@@ -104,6 +100,18 @@ func getCommits(path string, auth *GithubAuth) (commits githubCommits, cache boo
 
 	cache, err = doGithub(path, url, &commits)
 	return commits, cache, err
+}
+
+// normalizePath identify if the path is from Github and normalize it for the
+// Github API request.
+func normalizePath(path string) (string, error) {
+	if !strings.HasPrefix(path, "github.com/") {
+		return "", NewError(path, ErrorCodeNonGithub, nil)
+	}
+
+	normalizedPath := strings.TrimPrefix(path, "github.com/")
+	normalizedPath = strings.Join(strings.Split(normalizedPath, "/")[:2], "/")
+	return normalizedPath, nil
 }
 
 // doGithub is the low level function that do actually the work of querying
