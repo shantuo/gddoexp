@@ -61,7 +61,9 @@ type ArchiveResponse struct {
 func ShouldArchivePackage(p database.Package, db gddoDB, auth *GithubAuth) (archive, cache bool, err error) {
 	count, err := db.ImporterCount(p.Path)
 	if err != nil {
-		return false, false, NewError(p.Path, ErrorCodeRetrieveImportCounts, err)
+		// as we didn't perform any request yet, we can return a cache hit to
+		// reuse the token
+		return false, true, NewError(p.Path, ErrorCodeRetrieveImportCounts, err)
 	}
 
 	// don't archive the package if there's a reference to it from other
@@ -74,7 +76,7 @@ func ShouldArchivePackage(p database.Package, db gddoDB, auth *GithubAuth) (arch
 
 	repository, cache, err := getGithubRepository(p.Path, auth)
 	if err != nil {
-		return false, false, err
+		return false, cache, err
 	}
 
 	// we only archive the package if there's no reference to it from other
@@ -159,7 +161,7 @@ type FastForkResponse struct {
 func IsFastForkPackage(p database.Package, auth *GithubAuth) (fastFork, cache bool, err error) {
 	repository, cacheRepository, err := getGithubRepository(p.Path, auth)
 	if err != nil {
-		return false, false, err
+		return false, cacheRepository, err
 	}
 
 	// if the repository is not a fork we don't need to check the commits
@@ -169,7 +171,7 @@ func IsFastForkPackage(p database.Package, auth *GithubAuth) (fastFork, cache bo
 
 	commits, cacheCommits, err := getCommits(p.Path, auth)
 	if err != nil {
-		return false, false, err
+		return false, cacheRepository && cacheCommits, err
 	}
 
 	forkLimitDate := repository.CreatedAt.Add(commitsPeriod)

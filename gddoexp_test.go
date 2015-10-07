@@ -213,6 +213,7 @@ func TestShouldArchivePackage(t *testing.T) {
 					return 0, fmt.Errorf("i'm a crazy error")
 				},
 			},
+			expectedCache: true,
 			expectedError: gddoexp.NewError("github.com/rafaeljusto/gddoexp", gddoexp.ErrorCodeRetrieveImportCounts, fmt.Errorf("i'm a crazy error")),
 		},
 		{
@@ -223,6 +224,7 @@ func TestShouldArchivePackage(t *testing.T) {
 					return 0, nil
 				},
 			},
+			expectedCache: true,
 			expectedError: gddoexp.NewError("bitbucket.org/rafaeljusto/gddoexp", gddoexp.ErrorCodeNonGithub, nil),
 		},
 		{

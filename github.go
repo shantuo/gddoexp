@@ -58,7 +58,9 @@ type githubRepository struct {
 func getGithubRepository(path string, auth *GithubAuth) (repository githubRepository, cache bool, err error) {
 	normalizedPath, err := normalizePath(path)
 	if err != nil {
-		return repository, false, err
+		// as we didn't perform any request yet, we can return a cache hit to
+		// reuse the token
+		return repository, true, err
 	}
 
 	url := "https://api.github.com/repos/" + normalizedPath
@@ -90,7 +92,9 @@ type githubCommits []struct {
 func getCommits(path string, auth *GithubAuth) (commits githubCommits, cache bool, err error) {
 	normalizedPath, err := normalizePath(path)
 	if err != nil {
-		return commits, false, err
+		// as we didn't perform any request yet, we can return a cache hit to
+		// reuse the token
+		return commits, true, err
 	}
 
 	url := fmt.Sprintf("https://api.github.com/repos/%s/commits", normalizedPath)
