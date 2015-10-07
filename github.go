@@ -46,6 +46,11 @@ type GithubAuth struct {
 	Secret string
 }
 
+// String build the Github authentication in the request query string format.
+func (g GithubAuth) String() string {
+	return fmt.Sprintf("client_id=%s&client_secret=%s", g.ID, g.Secret)
+}
+
 // getGithubInfo will retrieve the path project information. For a better
 // rate limit the requests must be authenticated, for more information check:
 // https://developer.github.com/v3/search/#rate-limit. This function also
@@ -63,8 +68,7 @@ func getGithubInfo(path string, auth *GithubAuth) (info githubInfo, cache bool, 
 	if auth == nil {
 		url = "https://api.github.com/repos/" + normalizedPath
 	} else {
-		url = fmt.Sprintf("https://api.github.com/repos/%s?client_id=%s&client_secret=%s",
-			normalizedPath, auth.ID, auth.Secret)
+		url = fmt.Sprintf("https://api.github.com/repos/%s?%s", normalizedPath, auth)
 	}
 
 	rsp, err := HTTPClient.Get(url)
