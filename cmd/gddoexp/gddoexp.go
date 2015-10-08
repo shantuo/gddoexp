@@ -15,6 +15,12 @@ import (
 	"github.com/rafaeljusto/gddoexp"
 )
 
+func init() {
+	gddoexp.IsCacheResponse = func(r *http.Response) bool {
+		return r.Header.Get(httpcache.XFromCache) == "1"
+	}
+}
+
 func main() {
 	clientID := flag.String("id", "", "Github client ID")
 	clientSecret := flag.String("secret", "", "Github client secret")
