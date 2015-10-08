@@ -650,12 +650,11 @@ func TestIsFastForkPackage(t *testing.T) {
   "fork": false
 }`)),
 						}, nil
-
-					} else {
-						return &http.Response{
-							StatusCode: http.StatusBadRequest,
-						}, nil
 					}
+
+					return &http.Response{
+						StatusCode: http.StatusBadRequest,
+					}, nil
 				},
 			},
 			expected: false,
@@ -859,16 +858,15 @@ func TestAreFastForkPackages(t *testing.T) {
   }
 ]`)),
 						}, nil
+					}
 
-					} else {
-						return &http.Response{
-							StatusCode: http.StatusOK,
-							Body: ioutil.NopCloser(bytes.NewBufferString(`{
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Body: ioutil.NopCloser(bytes.NewBufferString(`{
   "created_at": "2010-08-03T21:56:23Z",
   "fork": true
 }`)),
-						}, nil
-					}
+					}, nil
 				},
 			},
 			expected: []gddoexp.FastForkResponse{
@@ -930,16 +928,15 @@ func TestAreFastForkPackages(t *testing.T) {
   }
 ]`)),
 						}, nil
+					}
 
-					} else {
-						return &http.Response{
-							StatusCode: http.StatusOK,
-							Body: ioutil.NopCloser(bytes.NewBufferString(`{
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Body: ioutil.NopCloser(bytes.NewBufferString(`{
   "created_at": "2010-08-03T21:56:23Z",
   "fork": true
 }`)),
-						}, nil
-					}
+					}, nil
 				},
 			},
 			expected: []gddoexp.FastForkResponse{
@@ -992,19 +989,18 @@ func TestAreFastForkPackages(t *testing.T) {
   }
 ]`)),
 						}, nil
+					}
 
-					} else {
-						return &http.Response{
-							StatusCode: http.StatusOK,
-							Header: http.Header{
-								"Cache": []string{"1"},
-							},
-							Body: ioutil.NopCloser(bytes.NewBufferString(`{
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Header: http.Header{
+							"Cache": []string{"1"},
+						},
+						Body: ioutil.NopCloser(bytes.NewBufferString(`{
   "created_at": "2010-08-03T21:56:23Z",
   "fork": true
 }`)),
-						}, nil
-					}
+					}, nil
 				},
 			},
 			expected: []gddoexp.FastForkResponse{
@@ -1054,19 +1050,18 @@ func TestAreFastForkPackages(t *testing.T) {
   }
 ]`)),
 						}, nil
+					}
 
-					} else {
-						return &http.Response{
-							StatusCode: http.StatusOK,
-							Header: http.Header{
-								"Cache": []string{"1"},
-							},
-							Body: ioutil.NopCloser(bytes.NewBufferString(`{
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Header: http.Header{
+							"Cache": []string{"1"},
+						},
+						Body: ioutil.NopCloser(bytes.NewBufferString(`{
   "created_at": "2010-08-03T21:56:23Z",
   "fork": true
 }`)),
-						}, nil
-					}
+					}, nil
 				},
 			},
 			expected: []gddoexp.FastForkResponse{
