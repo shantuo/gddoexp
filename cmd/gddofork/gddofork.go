@@ -23,7 +23,7 @@ func main() {
 	flag.Parse()
 
 	var auth *gddoexp.GithubAuth
-	if clientID != nil || clientSecret != nil {
+	if (clientID != nil && *clientID != "") || (clientSecret != nil && *clientSecret != "") {
 		if *clientID == "" || *clientSecret == "" {
 			fmt.Println("to enable Gthub authentication, you need to inform the id and secret")
 			flag.PrintDefaults()
@@ -78,6 +78,8 @@ func main() {
 			if progress != nil && !*progress {
 				fmt.Println(response.Path)
 			}
+		} else {
+			log.Printf("package “%s” is not a fast fork\n", response.Path)
 		}
 	}
 

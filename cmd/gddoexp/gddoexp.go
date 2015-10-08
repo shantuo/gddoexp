@@ -29,7 +29,7 @@ func main() {
 	flag.Parse()
 
 	var auth *gddoexp.GithubAuth
-	if clientID != nil || clientSecret != nil {
+	if (clientID != nil && *clientID != "") || (clientSecret != nil && *clientSecret != "") {
 		if *clientID == "" || *clientSecret == "" {
 			fmt.Println("to enable Gthub authentication, you need to inform the id and secret")
 			flag.PrintDefaults()
