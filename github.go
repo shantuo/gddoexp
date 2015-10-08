@@ -90,12 +90,9 @@ type githubCommits []struct {
 // check: https://developer.github.com/v3/search/#rate-limit. This function
 // also returns if the response was retrieved from a local cache.
 func getCommits(path string, auth *GithubAuth) (commits githubCommits, cache bool, err error) {
-	normalizedPath, err := normalizePath(path)
-	if err != nil {
-		// as we didn't perform any request yet, we can return a cache hit to
-		// reuse the token
-		return commits, true, err
-	}
+	// we don't need to check the error here, because when we retrieved the
+	// repository we already checked for it
+	normalizedPath, _ := normalizePath(path)
 
 	url := fmt.Sprintf("https://api.github.com/repos/%s/commits", normalizedPath)
 	if auth != nil {
