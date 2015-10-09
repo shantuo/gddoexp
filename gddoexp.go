@@ -93,7 +93,7 @@ func ShouldArchivePackage(p database.Package, db gddoDB, auth *GithubAuth) (arch
 // authentication can be informed to allow more checks per minute in Github
 // API (we will use token bucket strategy to don't exceed the rate limit).
 func ShouldArchivePackages(packages []database.Package, db gddoDB, auth *GithubAuth) <-chan ArchiveResponse {
-	out := make(chan ArchiveResponse)
+	out := make(chan ArchiveResponse, agents)
 
 	go func() {
 		var bucket *ratelimit.Bucket
@@ -205,7 +205,7 @@ func IsFastForkPackage(p database.Package, auth *GithubAuth) (fastFork, cache bo
 // informed to allow more checks per minute in Github API (we will use token
 // bucket strategy to don't exceed the rate limit).
 func AreFastForkPackages(packages []database.Package, auth *GithubAuth) <-chan FastForkResponse {
-	out := make(chan FastForkResponse)
+	out := make(chan FastForkResponse, agents)
 
 	go func() {
 		var bucket *ratelimit.Bucket
