@@ -75,15 +75,20 @@ func ShouldArchivePackage(p database.Package, db gddoDB, auth *GithubAuth) (arch
 		return false, true, nil
 	}
 
-	repository, cache, err := getGithubRepository(p.Path, auth)
+	repository, cacheRepository, err := getGithubRepository(p.Path, auth)
 	if err != nil {
-		return false, cache, err
+		return false, cacheRepository, err
 	}
 
 	// we only archive the package if there's no reference to it from other
 	// projects (checked above) and if there's no updates in Github on the last
 	// 2 years
-	return time.Now().Sub(repository.UpdatedAt) >= unused, cache, nil
+	//return time.Now().Sub(repository.UpdatedAt) >= unused, cache, nil
+
+	// we will check if the package is a fork with a few commits for a pull
+	// request, if so we consider it a fast fork and is eligible to be archived
+	fastFork, cacheFastFork, err := isFastForkPackage(p, auth, repository)
+	return fastFork, cacheRepository && cacheFastFork, err
 }
 
 // ShouldArchivePackages determinate if a package should be archived or not,
@@ -167,14 +172,22 @@ func IsFastForkPackage(p database.Package, auth *GithubAuth) (fastFork, cache bo
 		return false, cacheRepository, err
 	}
 
+	fastFork, cache, err = isFastForkPackage(p, auth, repository)
+	return fastFork, cache && cacheRepository, err
+}
+
+// isFastForkPackage is the low level function that will actually check if
+// the package is a fast fork. It receives the repository information so we can
+// reuse it with the function ShouldArchivePackage.
+func isFastForkPackage(p database.Package, auth *GithubAuth, repository githubRepository) (fastFork, cache bool, err error) {
 	// if the repository is not a fork we don't need to check the commits
 	if !repository.Fork {
-		return false, cacheRepository, nil
+		return false, true, nil
 	}
 
-	commits, cacheCommits, err := getCommits(p.Path, auth)
+	commits, cache, err := getCommits(p.Path, auth)
 	if err != nil {
-		return false, cacheRepository && cacheCommits, err
+		return false, cache, err
 	}
 
 	forkLimitDate := repository.CreatedAt.Add(commitsPeriod)
@@ -196,7 +209,7 @@ func IsFastForkPackage(p database.Package, auth *GithubAuth) (fastFork, cache bo
 		fastFork = false
 	}
 
-	return fastFork, cacheRepository && cacheCommits, nil
+	return fastFork, cache, nil
 }
 
 // AreFastForkPackages determinate if a package is a fast fork or not,
