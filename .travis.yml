@@ -1,0 +1,30 @@
+language: go
+
+go:
+  - tip
+
+env:
+  global:
+    - BUILD_GOARCH=amd64
+  matrix:
+    - BUILD_GOOS=linux
+
+install:
+  - go get github.com/golang/gddo
+  - go get github.com/juju/ratelimit
+  - go get golang.org/x/tools/cmd/cover
+  - go get github.com/mattn/goveralls
+
+script:
+  - gvm cross $BUILD_GOOS $BUILD_GOARCH
+  - GOARCH=$BUILD_GOARCH GOOS=$BUILD_GOOS go build
+
+  # only test on linux
+  - if [ $BUILD_GOOS == "linux" ]; then GOARCH=$BUILD_GOARCH GOOS=$BUILD_GOOS go test -v -covermode=count -coverprofile=coverage.out && $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN; fi
+
+notifications:
+  email:
+    recipients:
+      - rafael@justo.net.br
+    on_success: change
+    on_failure: always
