@@ -6,20 +6,21 @@ go:
 env:
   global:
     - BUILD_GOARCH=amd64
+    - secure: gDp9lEIHLJMqhWGJXPLrf7xZkLMg/YACYT0xUk7XXKOLGgcuxPDuACEIMDsiNuDsIJ70NemwkTOuhK7SGbrluZAXJM/0N8avqgsACrmb5GNTQhFb03RtlZbdCCUrErnVpyvnrdghueMTZzrVtaICO1bhf/1AHFJLwvpO2ACi961RjwvHCzl4hbzzyMdQPfKeTfe16UAYDDdCTbYBTm2jgzIXDfWOmcjaW451gjImtMs+upUz1A48ApkeQTyclBegyajlXPmhuzoqxojO9gacgUy66oqHtrv2RimwU/k3VHfF8mRJZcXrI4KWxuJmMrDq4XmVI7yC2ASTqAjQTGBkqB9pQy9Ip+bmUBF2BM1WoOX7ke6bkqh2n1uifIrJbMIt3pvg8E0Hnu91cGXiahsAHpGVvcyDsEG36Y2pKSbcXj/Dd0R2Rqpyf45J8+WqtMAT4owrogadFsIufaSxoeXmzO2RYtWjpIMqA8IVjijYbFgJQTcX3mlXf8tc8QDX4wgJuvKC8DN9pxH92pgk2+SIVHjZ7Wr5EjL+XhrI6lzZ4VCxr5U8Gw9mBsKyFc4pnj2cKi5Ibww5DrS/8luxr3dPwwvnlIZBHWzpOaQyu3oF4fMQMmRu50SEbYyRbYiiPXh/B/31K9Bp4xLy5pJaDK9Bs57XUz01Fh8tOMqO9tFVzF0=
   matrix:
     - BUILD_GOOS=linux
 
 install:
   - go get github.com/golang/gddo/database
   - go get github.com/juju/ratelimit
+  - go get github.com/aryann/difflib
+  - go get github.com/davecgh/go-spew/spew
   - go get golang.org/x/tools/cmd/cover
   - go get github.com/mattn/goveralls
 
 script:
   - gvm cross $BUILD_GOOS $BUILD_GOARCH
   - GOARCH=$BUILD_GOARCH GOOS=$BUILD_GOOS go build
-
-  # only test on linux
   - if [ $BUILD_GOOS == "linux" ]; then GOARCH=$BUILD_GOARCH GOOS=$BUILD_GOOS go test -v -covermode=count -coverprofile=coverage.out && $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN; fi
 
 notifications:
