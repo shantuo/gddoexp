@@ -51,6 +51,7 @@ type gddoDB interface {
 type ArchiveResponse struct {
 	Path    string
 	Archive bool
+	Cache   bool
 	Error   error
 }
 
@@ -123,6 +124,7 @@ func ShouldArchivePackages(packages []database.Package, db gddoDB, auth *GithubA
 					out <- ArchiveResponse{
 						Path:    p.Path,
 						Archive: archive,
+						Cache:   cache,
 						Error:   err,
 					}
 
@@ -152,6 +154,7 @@ func ShouldArchivePackages(packages []database.Package, db gddoDB, auth *GithubA
 type FastForkResponse struct {
 	Path     string
 	FastFork bool
+	Cache    bool
 	Error    error
 }
 
@@ -233,6 +236,7 @@ func AreFastForkPackages(packages []database.Package, auth *GithubAuth) <-chan F
 					out <- FastForkResponse{
 						Path:     p.Path,
 						FastFork: fastFork,
+						Cache:    cache,
 						Error:    err,
 					}
 

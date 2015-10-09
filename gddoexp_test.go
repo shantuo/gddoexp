@@ -479,22 +479,27 @@ func TestShouldArchivePackages(t *testing.T) {
 				{
 					Path:    "github.com/docker/docker",
 					Archive: true,
+					Cache:   true,
 				},
 				{
 					Path:    "github.com/golang/gddo",
 					Archive: true,
+					Cache:   true,
 				},
 				{
 					Path:    "github.com/golang/go",
 					Archive: true,
+					Cache:   true,
 				},
 				{
 					Path:    "github.com/miekg/dns",
 					Archive: true,
+					Cache:   true,
 				},
 				{
 					Path:    "github.com/rafaeljusto/gddoexp",
 					Archive: true,
+					Cache:   true,
 				},
 			},
 		},
@@ -1007,22 +1012,27 @@ func TestAreFastForkPackages(t *testing.T) {
 				{
 					Path:     "github.com/rafaeljusto/dns",
 					FastFork: true,
+					Cache:    true,
 				},
 				{
 					Path:     "github.com/rafaeljusto/go-testdb",
 					FastFork: true,
+					Cache:    true,
 				},
 				{
 					Path:     "github.com/rafaeljusto/handy",
 					FastFork: true,
+					Cache:    true,
 				},
 				{
 					Path:     "github.com/rafaeljusto/mysql",
 					FastFork: true,
+					Cache:    true,
 				},
 				{
 					Path:     "github.com/rafaeljusto/schema",
 					FastFork: true,
+					Cache:    true,
 				},
 			},
 		},

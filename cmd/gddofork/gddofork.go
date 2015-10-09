@@ -59,16 +59,22 @@ func main() {
 
 	log.SetOutput(o)
 	log.Println("BEGIN")
-	log.Printf("%d packages will be analyzed\n", len(pkgs))
+	log.Printf("%d packages will be analyzed", len(pkgs))
 
 	var progressBar *pb.ProgressBar
 	if progress != nil && *progress {
 		progressBar = pb.StartNew(len(pkgs))
 	}
 
+	var cache int
+
 	for response := range gddoexp.AreFastForkPackages(pkgs, auth) {
 		if progress != nil && *progress {
 			progressBar.Increment()
+		}
+
+		if response.Cache {
+			cache++
 		}
 
 		if response.Error != nil {
@@ -87,6 +93,7 @@ func main() {
 		progressBar.Finish()
 	}
 
+	log.Println("Cache hits:", cache)
 	log.Println("END")
 }
 
