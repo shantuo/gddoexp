@@ -10,7 +10,7 @@ env:
     - BUILD_GOOS=linux
 
 install:
-  - go get github.com/golang/gddo
+  - go get github.com/golang/gddo/database
   - go get github.com/juju/ratelimit
   - go get golang.org/x/tools/cmd/cover
   - go get github.com/mattn/goveralls
