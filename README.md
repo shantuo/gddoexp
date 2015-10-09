@@ -1,6 +1,6 @@
 # gddoexp
 
-[![GoDoc](https://godoc.org/github.com/rafaeljusto/gddoexp?status.svg)](https://godoc.org/github.com/rafaeljusto/gddoexp)
+[![GoDoc](https://godoc.org/github.com/rafaeljusto/gddoexp?status.svg)](https://godoc.org/github.com/rafaeljusto/gddoexp) [![Build Status](https://travis-ci.org/rafaeljusto/gddoexp.svg)](https://travis-ci.org/rafaeljusto/gddoexp) [![Coverage Status](https://coveralls.io/repos/rafaeljusto/gddoexp/badge.svg?branch=master&service=github)](https://coveralls.io/github/rafaeljusto/gddoexp?branch=master)
 
 gddoexp (Go Doc Dot Org Expired) was created to indicate if a package from GoDoc
 should be archived. Idea was born from [issue
