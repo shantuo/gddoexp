@@ -83,7 +83,9 @@ func ShouldArchivePackage(p database.Package, db gddoDB, auth *GithubAuth) (arch
 	// we only archive the package if there's no reference to it from other
 	// projects (checked above) and if there's no updates in Github on the last
 	// 2 years
-	//return time.Now().Sub(repository.UpdatedAt) >= unused, cache, nil
+	if time.Now().Sub(repository.UpdatedAt) >= unused {
+		return true, cacheRepository, nil
+	}
 
 	// we will check if the package is a fork with a few commits for a pull
 	// request, if so we consider it a fast fork and is eligible to be archived
