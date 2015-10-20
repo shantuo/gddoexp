@@ -130,7 +130,14 @@ func doGithub(path, url string, obj interface{}) (cache bool, err error) {
 		}
 	}()
 
-	if rsp.StatusCode != http.StatusOK {
+	switch rsp.StatusCode {
+	case http.StatusOK:
+		// valid response
+	case http.StatusForbidden:
+		return false, NewError(path, ErrorCodeGithubForbidden, nil)
+	case http.StatusNotFound:
+		return false, NewError(path, ErrorCodeGithubNotFound, nil)
+	default:
 		return false, NewError(path, ErrorCodeGithubStatusCode, nil)
 	}
 

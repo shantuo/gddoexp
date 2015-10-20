@@ -15,8 +15,16 @@ const (
 	// information from Guthub API.
 	ErrorCodeGithubFetch
 
+	// ErrorCodeGithubForbidden is used when the rate limit is reached in Github
+	// (status 403 Forbidden).
+	ErrorCodeGithubForbidden
+
+	// ErrorCodeGithubNotFound is used when the repository wasn't found in Github
+	// (status 404 Not Found).
+	ErrorCodeGithubNotFound
+
 	// ErrorCodeGithubStatusCode is used when the response status code from
-	// Github isn't 200 OK.
+	// Github isn't one of the following: 200 OK, 403 Forbidden or 404 Not Found.
 	ErrorCodeGithubStatusCode
 
 	// ErrorCodeGithubParse is used when there's a problem while parsing the
@@ -34,6 +42,8 @@ var errorCodeMessage = map[ErrorCode]string{
 	ErrorCodeRetrieveImportCounts: "error retrieving import counts",
 	ErrorCodeNonGithub:            "not a Github project",
 	ErrorCodeGithubFetch:          "error retrieving information from Github",
+	ErrorCodeGithubForbidden:      "ratelimit reached in Github API",
+	ErrorCodeGithubNotFound:       "not found in Github",
 	ErrorCodeGithubStatusCode:     "unexpected status code from Github",
 	ErrorCodeGithubParse:          "error decoding Github response",
 }

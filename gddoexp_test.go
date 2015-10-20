@@ -243,7 +243,41 @@ func TestShouldArchivePackage(t *testing.T) {
 			expectedError: gddoexp.NewError("github.com/rafaeljusto/gddoexp", gddoexp.ErrorCodeGithubFetch, fmt.Errorf("i'm a crazy error")),
 		},
 		{
-			description: "it should fail when the HTTP status code from Github API isn't OK",
+			description: "it should fail when the HTTP status code from Github API is 403 Forbidden (ratelimit)",
+			path:        "github.com/rafaeljusto/gddoexp",
+			db: databaseMock{
+				importerCountMock: func(path string) (int, error) {
+					return 0, nil
+				},
+			},
+			httpClient: httpClientMock{
+				getMock: func(url string) (*http.Response, error) {
+					return &http.Response{
+						StatusCode: http.StatusForbidden,
+					}, nil
+				},
+			},
+			expectedError: gddoexp.NewError("github.com/rafaeljusto/gddoexp", gddoexp.ErrorCodeGithubForbidden, nil),
+		},
+		{
+			description: "it should fail when the HTTP status code from Github API is 404 Not Found",
+			path:        "github.com/rafaeljusto/gddoexp",
+			db: databaseMock{
+				importerCountMock: func(path string) (int, error) {
+					return 0, nil
+				},
+			},
+			httpClient: httpClientMock{
+				getMock: func(url string) (*http.Response, error) {
+					return &http.Response{
+						StatusCode: http.StatusNotFound,
+					}, nil
+				},
+			},
+			expectedError: gddoexp.NewError("github.com/rafaeljusto/gddoexp", gddoexp.ErrorCodeGithubNotFound, nil),
+		},
+		{
+			description: "it should fail when the HTTP status code from Github API isn't valid",
 			path:        "github.com/rafaeljusto/gddoexp",
 			db: databaseMock{
 				importerCountMock: func(path string) (int, error) {
