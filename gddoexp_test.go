@@ -17,7 +17,7 @@ import (
 	"github.com/rafaeljusto/gddoexp"
 )
 
-func TestShouldArchivePackage(t *testing.T) {
+func TestShouldSuppressPackage(t *testing.T) {
 	data := []struct {
 		description   string
 		path          string
@@ -29,7 +29,7 @@ func TestShouldArchivePackage(t *testing.T) {
 		expectedError error
 	}{
 		{
-			description: "it should archive a package (without authentication)",
+			description: "it should suppress a package (without authentication)",
 			path:        "github.com/rafaeljusto/gddoexp",
 			db: databaseMock{
 				importerCountMock: func(path string) (int, error) {
@@ -59,7 +59,7 @@ func TestShouldArchivePackage(t *testing.T) {
 			expected: true,
 		},
 		{
-			description: "it should archive a package from cache (without authentication)",
+			description: "it should suppress a package from cache (without authentication)",
 			path:        "github.com/rafaeljusto/gddoexp",
 			db: databaseMock{
 				importerCountMock: func(path string) (int, error) {
@@ -93,7 +93,7 @@ func TestShouldArchivePackage(t *testing.T) {
 			expectedCache: true,
 		},
 		{
-			description: "it should archive a package (authenticated)",
+			description: "it should suppress a package (authenticated)",
 			path:        "github.com/rafaeljusto/gddoexp",
 			db: databaseMock{
 				importerCountMock: func(path string) (int, error) {
@@ -127,7 +127,7 @@ func TestShouldArchivePackage(t *testing.T) {
 			expected: true,
 		},
 		{
-			description: "it shouldn't archive a package because of recent commit",
+			description: "it shouldn't suppress a package because of recent commit",
 			path:        "github.com/rafaeljusto/gddoexp",
 			db: databaseMock{
 				importerCountMock: func(path string) (int, error) {
@@ -151,7 +151,7 @@ func TestShouldArchivePackage(t *testing.T) {
 			expected: false,
 		},
 		{
-			description: "it shouldn't archive a package because of import reference",
+			description: "it shouldn't suppress a package because of import reference",
 			path:        "github.com/rafaeljusto/gddoexp",
 			db: databaseMock{
 				importerCountMock: func(path string) (int, error) {
@@ -176,7 +176,7 @@ func TestShouldArchivePackage(t *testing.T) {
 			expectedCache: true,
 		},
 		{
-			description: "it should archive a package (project subpath)",
+			description: "it should suppress a package (project subpath)",
 			path:        "github.com/rafaeljusto/gddoexp/cmd/gddoexp",
 			db: databaseMock{
 				importerCountMock: func(path string) (int, error) {
@@ -333,13 +333,13 @@ func TestShouldArchivePackage(t *testing.T) {
 			Path: item.path,
 		}
 
-		archive, cache, err := gddoexp.ShouldArchivePackage(p, item.db, item.auth)
+		suppress, cache, err := gddoexp.ShouldSuppressPackage(p, item.db, item.auth)
 
-		if archive != item.expected {
+		if suppress != item.expected {
 			if item.expected {
-				t.Errorf("[%d] %s: expected package to be archived", i, item.description)
+				t.Errorf("[%d] %s: expected package to be suppressed", i, item.description)
 			} else {
-				t.Errorf("[%d] %s: expected package to don't be archived", i, item.description)
+				t.Errorf("[%d] %s: expected package to don't be suppressed", i, item.description)
 			}
 		}
 
@@ -357,17 +357,17 @@ func TestShouldArchivePackage(t *testing.T) {
 	}
 }
 
-func TestShouldArchivePackages(t *testing.T) {
+func TestShouldSuppressPackages(t *testing.T) {
 	data := []struct {
 		description string
 		packages    []database.Package
 		db          databaseMock
 		auth        *gddoexp.GithubAuth
 		httpClient  httpClientMock
-		expected    []gddoexp.ArchiveResponse
+		expected    []gddoexp.SuppressResponse
 	}{
 		{
-			description: "it should archive all the packages (without authentication)",
+			description: "it should suppress all the packages (without authentication)",
 			packages: []database.Package{
 				{Path: "github.com/rafaeljusto/gddoexp"},
 				{Path: "github.com/golang/gddo"},
@@ -394,31 +394,31 @@ func TestShouldArchivePackages(t *testing.T) {
 					}, nil
 				},
 			},
-			expected: []gddoexp.ArchiveResponse{
+			expected: []gddoexp.SuppressResponse{
 				{
-					Path:    "github.com/docker/docker",
-					Archive: true,
+					Path:     "github.com/docker/docker",
+					Suppress: true,
 				},
 				{
-					Path:    "github.com/golang/gddo",
-					Archive: true,
+					Path:     "github.com/golang/gddo",
+					Suppress: true,
 				},
 				{
-					Path:    "github.com/golang/go",
-					Archive: true,
+					Path:     "github.com/golang/go",
+					Suppress: true,
 				},
 				{
-					Path:    "github.com/miekg/dns",
-					Archive: true,
+					Path:     "github.com/miekg/dns",
+					Suppress: true,
 				},
 				{
-					Path:    "github.com/rafaeljusto/gddoexp",
-					Archive: true,
+					Path:     "github.com/rafaeljusto/gddoexp",
+					Suppress: true,
 				},
 			},
 		},
 		{
-			description: "it should archive all the packages (authenticated)",
+			description: "it should suppress all the packages (authenticated)",
 			packages: []database.Package{
 				{Path: "github.com/rafaeljusto/gddoexp"},
 				{Path: "github.com/golang/gddo"},
@@ -455,31 +455,31 @@ func TestShouldArchivePackages(t *testing.T) {
 					}, nil
 				},
 			},
-			expected: []gddoexp.ArchiveResponse{
+			expected: []gddoexp.SuppressResponse{
 				{
-					Path:    "github.com/docker/docker",
-					Archive: true,
+					Path:     "github.com/docker/docker",
+					Suppress: true,
 				},
 				{
-					Path:    "github.com/golang/gddo",
-					Archive: true,
+					Path:     "github.com/golang/gddo",
+					Suppress: true,
 				},
 				{
-					Path:    "github.com/golang/go",
-					Archive: true,
+					Path:     "github.com/golang/go",
+					Suppress: true,
 				},
 				{
-					Path:    "github.com/miekg/dns",
-					Archive: true,
+					Path:     "github.com/miekg/dns",
+					Suppress: true,
 				},
 				{
-					Path:    "github.com/rafaeljusto/gddoexp",
-					Archive: true,
+					Path:     "github.com/rafaeljusto/gddoexp",
+					Suppress: true,
 				},
 			},
 		},
 		{
-			description: "it should archive all the packages (cache hits)",
+			description: "it should suppress all the packages (cache hits)",
 			packages: []database.Package{
 				{Path: "github.com/rafaeljusto/gddoexp"},
 				{Path: "github.com/golang/gddo"},
@@ -509,31 +509,31 @@ func TestShouldArchivePackages(t *testing.T) {
 					}, nil
 				},
 			},
-			expected: []gddoexp.ArchiveResponse{
+			expected: []gddoexp.SuppressResponse{
 				{
-					Path:    "github.com/docker/docker",
-					Archive: true,
-					Cache:   true,
+					Path:     "github.com/docker/docker",
+					Suppress: true,
+					Cache:    true,
 				},
 				{
-					Path:    "github.com/golang/gddo",
-					Archive: true,
-					Cache:   true,
+					Path:     "github.com/golang/gddo",
+					Suppress: true,
+					Cache:    true,
 				},
 				{
-					Path:    "github.com/golang/go",
-					Archive: true,
-					Cache:   true,
+					Path:     "github.com/golang/go",
+					Suppress: true,
+					Cache:    true,
 				},
 				{
-					Path:    "github.com/miekg/dns",
-					Archive: true,
-					Cache:   true,
+					Path:     "github.com/miekg/dns",
+					Suppress: true,
+					Cache:    true,
 				},
 				{
-					Path:    "github.com/rafaeljusto/gddoexp",
-					Archive: true,
-					Cache:   true,
+					Path:     "github.com/rafaeljusto/gddoexp",
+					Suppress: true,
+					Cache:    true,
 				},
 			},
 		},
@@ -566,12 +566,12 @@ func TestShouldArchivePackages(t *testing.T) {
 	for i, item := range data {
 		gddoexp.HTTPClient = item.httpClient
 
-		var responses []gddoexp.ArchiveResponse
-		for response := range gddoexp.ShouldArchivePackages(item.packages, item.db, item.auth) {
+		var responses []gddoexp.SuppressResponse
+		for response := range gddoexp.ShouldSuppressPackages(item.packages, item.db, item.auth) {
 			responses = append(responses, response)
 		}
 
-		sort.Sort(byArchiveResponsePath(responses))
+		sort.Sort(bySuppressResponsePath(responses))
 		if !reflect.DeepEqual(item.expected, responses) {
 			t.Errorf("[%d] %s: mismatch responses.\n%v", i, item.description, diff(item.expected, responses))
 		}
@@ -1195,11 +1195,11 @@ func diff(a, b interface{}) []difflib.DiffRecord {
 	)
 }
 
-type byArchiveResponsePath []gddoexp.ArchiveResponse
+type bySuppressResponsePath []gddoexp.SuppressResponse
 
-func (b byArchiveResponsePath) Len() int           { return len(b) }
-func (b byArchiveResponsePath) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
-func (b byArchiveResponsePath) Less(i, j int) bool { return b[i].Path < b[j].Path }
+func (b bySuppressResponsePath) Len() int           { return len(b) }
+func (b bySuppressResponsePath) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+func (b bySuppressResponsePath) Less(i, j int) bool { return b[i].Path < b[j].Path }
 
 type byFastForkResponsePath []gddoexp.FastForkResponse
 

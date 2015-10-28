@@ -79,7 +79,7 @@ func main() {
 
 	var cache int
 
-	for response := range gddoexp.ShouldArchivePackages(pkgs, db, auth) {
+	for response := range gddoexp.ShouldSuppressPackages(pkgs, db, auth) {
 		if progress != nil && *progress {
 			progressBar.Increment()
 		}
@@ -90,8 +90,8 @@ func main() {
 
 		if response.Error != nil {
 			log.Println(response.Error)
-		} else if response.Archive {
-			log.Printf("package “%s” should be archived\n", response.Path)
+		} else if response.Suppress {
+			log.Printf("package “%s” should be suppressed\n", response.Path)
 			if progress != nil && !*progress {
 				fmt.Println(response.Path)
 			}

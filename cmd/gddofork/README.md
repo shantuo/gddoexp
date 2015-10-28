@@ -4,7 +4,7 @@ gddofork is a filter to remove forked packages created for small pull requests.
 It can work using an input file (one package per line) or via stdin.
 
 For example, the following command would only print the packages with score that
-should be archived and aren't a fork for small pull requests:
+should be suppressed and aren't a fork for small pull requests:
 
 ```
 % gddoexp -id cba321 -secret abc123 | gddoscore | gddofork -id cba321 -secret abc123

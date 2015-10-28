@@ -3,10 +3,11 @@
 [![GoDoc](https://godoc.org/github.com/rafaeljusto/gddoexp?status.svg)](https://godoc.org/github.com/rafaeljusto/gddoexp) [![Build Status](https://travis-ci.org/rafaeljusto/gddoexp.svg)](https://travis-ci.org/rafaeljusto/gddoexp) [![Coverage Status](https://coveralls.io/repos/rafaeljusto/gddoexp/badge.svg?branch=master&service=github)](https://coveralls.io/github/rafaeljusto/gddoexp?branch=master)
 
 gddoexp (Go Doc Dot Org Expired) was created to indicate if a package from GoDoc
-should be archived. Idea was born from [issue
+should be suppressed from search results. Idea was born from [issue
 320](https://github.com/golang/gddo/issues/320) of [gddo
 project](https://github.com/golang/gddo) by [@garyburd](https://github.com/garyburd).
-The following rules are current applied to verify if a package should be archived:
+The following rules are current applied to verify if a package should be
+suppressed:
 
 * No other packages reference the analyzed package
 * Package wasn't modified in the last 2 years
