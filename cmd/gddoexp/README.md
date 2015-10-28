@@ -17,7 +17,7 @@ example:
 15 / 132277 [>----------------------------------------------] 0.01 % 12h45m10s
 ```
 
-When the progress bar isn't enabled only the packages selected to be archived
+When the progress bar isn't enabled only the packages selected to be suppressed
 are going to be printed in the stdout. Otherwise, you could always check the
 output log, by default is `gddoexp.out`.
 

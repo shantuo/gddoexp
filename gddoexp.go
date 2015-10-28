@@ -29,20 +29,20 @@ type gddoDB interface {
 	ImporterCount(string) (int, error)
 }
 
-// ArchiveResponse stores the information of a path verification on an
+// SuppressResponse stores the information of a path verification on an
 // asynchronous check.
-type ArchiveResponse struct {
-	Path    string
-	Archive bool
-	Cache   bool
-	Error   error
+type SuppressResponse struct {
+	Path     string
+	Suppress bool
+	Cache    bool
+	Error    error
 }
 
-// ShouldArchivePackage determinate if a package should be archived or not.
+// ShouldSuppressPackage determinate if a package should be suppressed or not.
 // It's necessary to inform the GoDoc database to retrieve current stored
 // package information. An optional argument with the Github authentication
 // can be informed to allow more checks per minute in Github API.
-func ShouldArchivePackage(p database.Package, db gddoDB, auth *GithubAuth) (archive, cache bool, err error) {
+func ShouldSuppressPackage(p database.Package, db gddoDB, auth *GithubAuth) (suppress, cache bool, err error) {
 	count, err := db.ImporterCount(p.Path)
 	if err != nil {
 		// as we didn't perform any request yet, we can return a cache hit to
@@ -50,9 +50,9 @@ func ShouldArchivePackage(p database.Package, db gddoDB, auth *GithubAuth) (arch
 		return false, true, NewError(p.Path, ErrorCodeRetrieveImportCounts, err)
 	}
 
-	// don't archive the package if there's a reference to it from other
+	// don't suppress the package if there's a reference to it from other
 	// projects (let's avoid send a request to Github if we already no that we
-	// don't need to archive it). We return cache hit as no request was made to
+	// don't need to suppress it). We return cache hit as no request was made to
 	// Github API.
 	if count > 0 {
 		return false, true, nil
@@ -63,7 +63,7 @@ func ShouldArchivePackage(p database.Package, db gddoDB, auth *GithubAuth) (arch
 		return false, cacheRepository, err
 	}
 
-	// we only archive the package if there's no reference to it from other
+	// we only suppress the package if there's no reference to it from other
 	// projects (checked above) and if there's no updates in Github on the last
 	// 2 years
 	if time.Now().Sub(repository.UpdatedAt) >= unused {
@@ -71,19 +71,20 @@ func ShouldArchivePackage(p database.Package, db gddoDB, auth *GithubAuth) (arch
 	}
 
 	// we will check if the package is a fork with a few commits for a pull
-	// request, if so we consider it a fast fork and is eligible to be archived
+	// request, if so we consider it a fast fork and is eligible to be
+	// suppressed
 	fastFork, cacheFastFork, err := isFastForkPackage(p, auth, repository)
 	return fastFork, cacheRepository && cacheFastFork, err
 }
 
-// ShouldArchivePackages determinate if a package should be archived or not,
-// but unlike ShouldArchivePackage, it can process a list of packages
+// ShouldSuppressPackages determinate if a package should be suppressed or not,
+// but unlike ShouldSuppressPackage, it can process a list of packages
 // concurrently. It's necessary to inform the GoDoc database to retrieve
 // current stored package information. An optional argument with the Github
 // authentication can be informed to allow more checks per minute in Github
 // API.
-func ShouldArchivePackages(packages []database.Package, db gddoDB, auth *GithubAuth) <-chan ArchiveResponse {
-	out := make(chan ArchiveResponse, agents)
+func ShouldSuppressPackages(packages []database.Package, db gddoDB, auth *GithubAuth) <-chan SuppressResponse {
+	out := make(chan SuppressResponse, agents)
 
 	go func() {
 		var wg sync.WaitGroup
@@ -94,12 +95,12 @@ func ShouldArchivePackages(packages []database.Package, db gddoDB, auth *GithubA
 		for i := 0; i < agents; i++ {
 			go func() {
 				for p := range in {
-					archive, cache, err := ShouldArchivePackage(p, db, auth)
-					out <- ArchiveResponse{
-						Path:    p.Path,
-						Archive: archive,
-						Cache:   cache,
-						Error:   err,
+					suppress, cache, err := ShouldSuppressPackage(p, db, auth)
+					out <- SuppressResponse{
+						Path:     p.Path,
+						Suppress: suppress,
+						Cache:    cache,
+						Error:    err,
 					}
 				}
 
@@ -143,7 +144,7 @@ func IsFastForkPackage(p database.Package, auth *GithubAuth) (fastFork, cache bo
 
 // isFastForkPackage is the low level function that will actually check if
 // the package is a fast fork. It receives the repository information so we can
-// reuse it with the function ShouldArchivePackage.
+// reuse it with the function ShouldSuppressPackage.
 func isFastForkPackage(p database.Package, auth *GithubAuth, repository githubRepository) (fastFork, cache bool, err error) {
 	// if the repository is not a fork we don't need to check the commits
 	if !repository.Fork {
