@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/golang/gddo/database"
-	"github.com/juju/ratelimit"
 )
 
 // unused stores the time that an unmodified project is considered unused.
@@ -22,22 +21,6 @@ const commitsPeriod = 7 * 24 * time.Hour
 // agents contains the number of concurrent go routines that will process
 // a list of packages
 const agents = 4
-
-// RateLimit controls the number of requests sent to the Github API for
-// authenticated and unauthenticated scenarios using the token bucket
-// strategy. For more information on the values, please check:
-// https://developer.github.com/v3/#rate-limiting
-var RateLimit = struct {
-	FillInterval     time.Duration
-	Capacity         int64
-	AuthFillInterval time.Duration
-	AuthCapacity     int64
-}{
-	FillInterval:     time.Minute,
-	Capacity:         agents,
-	AuthFillInterval: time.Second,
-	AuthCapacity:     agents,
-}
 
 // gddoDB contains all used methods from Database type of
 // github.com/golang/gddo/database. This is useful for mocking and building
@@ -103,13 +86,6 @@ func ShouldArchivePackages(packages []database.Package, db gddoDB, auth *GithubA
 	out := make(chan ArchiveResponse, agents)
 
 	go func() {
-		var bucket *ratelimit.Bucket
-		if auth == nil {
-			bucket = ratelimit.NewBucket(RateLimit.FillInterval, RateLimit.Capacity)
-		} else {
-			bucket = ratelimit.NewBucket(RateLimit.AuthFillInterval, RateLimit.AuthCapacity)
-		}
-
 		var wg sync.WaitGroup
 		wg.Add(agents)
 
@@ -117,26 +93,13 @@ func ShouldArchivePackages(packages []database.Package, db gddoDB, auth *GithubA
 
 		for i := 0; i < agents; i++ {
 			go func() {
-				// if the go routine retrieve a response from cache, it can run again
-				// without waiting for a token, as no hit was made in the Github API
-				wait := true
 				for p := range in {
-					if wait {
-						bucket.Wait(1)
-					} else {
-						wait = true
-					}
-
 					archive, cache, err := ShouldArchivePackage(p, db, auth)
 					out <- ArchiveResponse{
 						Path:    p.Path,
 						Archive: archive,
 						Cache:   cache,
 						Error:   err,
-					}
-
-					if cache {
-						wait = false
 					}
 				}
 
@@ -223,13 +186,6 @@ func AreFastForkPackages(packages []database.Package, auth *GithubAuth) <-chan F
 	out := make(chan FastForkResponse, agents)
 
 	go func() {
-		var bucket *ratelimit.Bucket
-		if auth == nil {
-			bucket = ratelimit.NewBucket(RateLimit.FillInterval, RateLimit.Capacity)
-		} else {
-			bucket = ratelimit.NewBucket(RateLimit.AuthFillInterval, RateLimit.AuthCapacity)
-		}
-
 		var wg sync.WaitGroup
 		wg.Add(agents)
 
@@ -237,26 +193,13 @@ func AreFastForkPackages(packages []database.Package, auth *GithubAuth) <-chan F
 
 		for i := 0; i < agents; i++ {
 			go func() {
-				// if the go routine retrieve a response from cache, it can run again
-				// without waiting for a token, as no hit was made in the Github API
-				wait := true
 				for p := range in {
-					if wait {
-						bucket.Wait(1)
-					} else {
-						wait = true
-					}
-
 					fastFork, cache, err := IsFastForkPackage(p, auth)
 					out <- FastForkResponse{
 						Path:     p.Path,
 						FastFork: fastFork,
 						Cache:    cache,
 						Error:    err,
-					}
-
-					if cache {
-						wait = false
 					}
 				}
 

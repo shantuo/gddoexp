@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -243,7 +244,7 @@ func TestShouldArchivePackage(t *testing.T) {
 			expectedError: gddoexp.NewError("github.com/rafaeljusto/gddoexp", gddoexp.ErrorCodeGithubFetch, fmt.Errorf("i'm a crazy error")),
 		},
 		{
-			description: "it should fail when the HTTP status code from Github API is 403 Forbidden (ratelimit)",
+			description: "it should fail when the HTTP status code from Github API is 403 Forbidden (ratelimit) without reset HTTP header",
 			path:        "github.com/rafaeljusto/gddoexp",
 			db: databaseMock{
 				importerCountMock: func(path string) (int, error) {
@@ -258,6 +259,57 @@ func TestShouldArchivePackage(t *testing.T) {
 				},
 			},
 			expectedError: gddoexp.NewError("github.com/rafaeljusto/gddoexp", gddoexp.ErrorCodeGithubForbidden, nil),
+		},
+		{
+			description: "it should fail when the HTTP status code from Github API is 403 Forbidden (ratelimit) with reset HTTP header",
+			path:        "github.com/rafaeljusto/gddoexp",
+			db: databaseMock{
+				importerCountMock: func(path string) (int, error) {
+					return 0, nil
+				},
+			},
+			httpClient: httpClientMock{
+				getMock: func() func(string) (*http.Response, error) {
+					var requestNumber int
+
+					return func(url string) (*http.Response, error) {
+						requestNumber++
+
+						if url != "https://api.github.com/repos/rafaeljusto/gddoexp" {
+							return &http.Response{
+								StatusCode: http.StatusBadRequest,
+							}, nil
+						}
+
+						switch requestNumber {
+						case 1:
+							return &http.Response{
+								StatusCode: http.StatusForbidden,
+								Header: http.Header{
+									"X-Ratelimit-Reset": []string{strconv.FormatInt(time.Now().Add(10*time.Millisecond).Unix(), 10)},
+								},
+							}, nil
+
+						case 2:
+							return &http.Response{
+								StatusCode: http.StatusOK,
+								Body: ioutil.NopCloser(bytes.NewBufferString(`{
+  "created_at": "2010-08-03T21:56:23Z",
+  "forks_count": 194,
+  "network_count": 194,
+  "stargazers_count": 1133,
+  "updated_at": "` + time.Now().Add(-2*365*24*time.Hour).Format(time.RFC3339) + `"
+}`)),
+							}, nil
+						}
+
+						return &http.Response{
+							StatusCode: http.StatusInternalServerError,
+						}, nil
+					}
+				}(),
+			},
+			expected: true,
 		},
 		{
 			description: "it should fail when the HTTP status code from Github API is 404 Not Found",
@@ -551,17 +603,6 @@ func TestShouldArchivePackages(t *testing.T) {
 	gddoexp.IsCacheResponse = func(r *http.Response) bool {
 		return r.Header.Get("Cache") == "1"
 	}
-
-	rateLimitBkp := gddoexp.RateLimit
-	defer func() {
-		gddoexp.RateLimit = rateLimitBkp
-	}()
-
-	// Change rate limit parameters to speed up the test
-	gddoexp.RateLimit.FillInterval = time.Millisecond
-	gddoexp.RateLimit.Capacity = 100
-	gddoexp.RateLimit.AuthFillInterval = time.Millisecond
-	gddoexp.RateLimit.AuthCapacity = 100
 
 	for i, item := range data {
 		gddoexp.HTTPClient = item.httpClient
@@ -1145,17 +1186,6 @@ func TestAreFastForkPackages(t *testing.T) {
 	gddoexp.IsCacheResponse = func(r *http.Response) bool {
 		return r.Header.Get("Cache") == "1"
 	}
-
-	rateLimitBkp := gddoexp.RateLimit
-	defer func() {
-		gddoexp.RateLimit = rateLimitBkp
-	}()
-
-	// Change rate limit parameters to speed up the test
-	gddoexp.RateLimit.FillInterval = time.Millisecond
-	gddoexp.RateLimit.Capacity = 100
-	gddoexp.RateLimit.AuthFillInterval = time.Millisecond
-	gddoexp.RateLimit.AuthCapacity = 100
 
 	for i, item := range data {
 		gddoexp.HTTPClient = item.httpClient

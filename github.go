@@ -4,8 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
+)
+
+const (
+	// githubRateLimitResetHeader is the HTTP header label that stores the time
+	// at which the current rate limit window resets in UTC epoch seconds.
+	githubRateLimitResetHeader = "X-Ratelimit-Reset"
 )
 
 // httpClient contains all used methods to perform requests in Github API.
@@ -117,8 +124,11 @@ func normalizePath(path string) (string, error) {
 
 // doGithub is the low level function that do actually the work of querying
 // Github API and parsing the response. It is also responsible for verifying if
-// the response was a cache hit or not.
+// the response was a cache hit or not. If Github API answers with Forbidden
+// status code, the function will sleep until the next available round to query
+// again for the information.
 func doGithub(path, url string, obj interface{}) (cache bool, err error) {
+query:
 	rsp, err := HTTPClient.Get(url)
 	if err != nil {
 		return false, NewError(path, ErrorCodeGithubFetch, err)
@@ -133,10 +143,20 @@ func doGithub(path, url string, obj interface{}) (cache bool, err error) {
 	switch rsp.StatusCode {
 	case http.StatusOK:
 		// valid response
+
 	case http.StatusForbidden:
-		return false, NewError(path, ErrorCodeGithubForbidden, nil)
+		epoch, err := strconv.ParseInt(rsp.Header.Get(githubRateLimitResetHeader), 10, 64)
+		if err != nil {
+			return false, NewError(path, ErrorCodeGithubForbidden, nil)
+		}
+
+		resetAt := time.Unix(epoch, 0)
+		time.Sleep(resetAt.Sub(time.Now()))
+		goto query
+
 	case http.StatusNotFound:
 		return false, NewError(path, ErrorCodeGithubNotFound, nil)
+
 	default:
 		return false, NewError(path, ErrorCodeGithubStatusCode, nil)
 	}
