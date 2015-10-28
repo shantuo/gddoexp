@@ -81,7 +81,7 @@ func ShouldArchivePackage(p database.Package, db gddoDB, auth *GithubAuth) (arch
 // concurrently. It's necessary to inform the GoDoc database to retrieve
 // current stored package information. An optional argument with the Github
 // authentication can be informed to allow more checks per minute in Github
-// API (we will use token bucket strategy to don't exceed the rate limit).
+// API.
 func ShouldArchivePackages(packages []database.Package, db gddoDB, auth *GithubAuth) <-chan ArchiveResponse {
 	out := make(chan ArchiveResponse, agents)
 
