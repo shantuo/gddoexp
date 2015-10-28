@@ -9,7 +9,6 @@ env:
 
 install:
   - go get github.com/golang/gddo/database
-  - go get github.com/juju/ratelimit
   - go get github.com/aryann/difflib
   - go get github.com/davecgh/go-spew/spew
   - go get golang.org/x/tools/cmd/cover
