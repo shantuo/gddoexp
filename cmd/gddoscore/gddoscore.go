@@ -93,9 +93,15 @@ func readFromFile(file string) (map[string]bool, error) {
 
 	pkgs := make(map[string]bool)
 	scanner := bufio.NewScanner(f)
+
 	for scanner.Scan() {
 		pkgs[scanner.Text()] = true
 	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error reading file “%s”: %s\n", file, err)
+	}
+
 	return pkgs, nil
 }
 

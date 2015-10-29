@@ -106,11 +106,17 @@ func readFromFile(file string) ([]database.Package, error) {
 
 	var pkgs []database.Package
 	scanner := bufio.NewScanner(f)
+
 	for scanner.Scan() {
 		pkgs = append(pkgs, database.Package{
 			Path: scanner.Text(),
 		})
 	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error reading file “%s”: %s\n", file, err)
+	}
+
 	return pkgs, nil
 }
 
