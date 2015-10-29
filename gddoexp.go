@@ -32,7 +32,7 @@ type gddoDB interface {
 // SuppressResponse stores the information of a path verification on an
 // asynchronous check.
 type SuppressResponse struct {
-	Path     string
+	Package  database.Package
 	Suppress bool
 	Cache    bool
 	Error    error
@@ -97,7 +97,7 @@ func ShouldSuppressPackages(packages []database.Package, db gddoDB, auth *Github
 				for p := range in {
 					suppress, cache, err := ShouldSuppressPackage(p, db, auth)
 					out <- SuppressResponse{
-						Path:     p.Path,
+						Package:  p,
 						Suppress: suppress,
 						Cache:    cache,
 						Error:    err,

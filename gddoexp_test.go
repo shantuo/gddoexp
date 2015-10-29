@@ -448,23 +448,23 @@ func TestShouldSuppressPackages(t *testing.T) {
 			},
 			expected: []gddoexp.SuppressResponse{
 				{
-					Path:     "github.com/docker/docker",
+					Package:  database.Package{Path: "github.com/docker/docker"},
 					Suppress: true,
 				},
 				{
-					Path:     "github.com/golang/gddo",
+					Package:  database.Package{Path: "github.com/golang/gddo"},
 					Suppress: true,
 				},
 				{
-					Path:     "github.com/golang/go",
+					Package:  database.Package{Path: "github.com/golang/go"},
 					Suppress: true,
 				},
 				{
-					Path:     "github.com/miekg/dns",
+					Package:  database.Package{Path: "github.com/miekg/dns"},
 					Suppress: true,
 				},
 				{
-					Path:     "github.com/rafaeljusto/gddoexp",
+					Package:  database.Package{Path: "github.com/rafaeljusto/gddoexp"},
 					Suppress: true,
 				},
 			},
@@ -509,23 +509,23 @@ func TestShouldSuppressPackages(t *testing.T) {
 			},
 			expected: []gddoexp.SuppressResponse{
 				{
-					Path:     "github.com/docker/docker",
+					Package:  database.Package{Path: "github.com/docker/docker"},
 					Suppress: true,
 				},
 				{
-					Path:     "github.com/golang/gddo",
+					Package:  database.Package{Path: "github.com/golang/gddo"},
 					Suppress: true,
 				},
 				{
-					Path:     "github.com/golang/go",
+					Package:  database.Package{Path: "github.com/golang/go"},
 					Suppress: true,
 				},
 				{
-					Path:     "github.com/miekg/dns",
+					Package:  database.Package{Path: "github.com/miekg/dns"},
 					Suppress: true,
 				},
 				{
-					Path:     "github.com/rafaeljusto/gddoexp",
+					Package:  database.Package{Path: "github.com/rafaeljusto/gddoexp"},
 					Suppress: true,
 				},
 			},
@@ -563,27 +563,27 @@ func TestShouldSuppressPackages(t *testing.T) {
 			},
 			expected: []gddoexp.SuppressResponse{
 				{
-					Path:     "github.com/docker/docker",
+					Package:  database.Package{Path: "github.com/docker/docker"},
 					Suppress: true,
 					Cache:    true,
 				},
 				{
-					Path:     "github.com/golang/gddo",
+					Package:  database.Package{Path: "github.com/golang/gddo"},
 					Suppress: true,
 					Cache:    true,
 				},
 				{
-					Path:     "github.com/golang/go",
+					Package:  database.Package{Path: "github.com/golang/go"},
 					Suppress: true,
 					Cache:    true,
 				},
 				{
-					Path:     "github.com/miekg/dns",
+					Package:  database.Package{Path: "github.com/miekg/dns"},
 					Suppress: true,
 					Cache:    true,
 				},
 				{
-					Path:     "github.com/rafaeljusto/gddoexp",
+					Package:  database.Package{Path: "github.com/rafaeljusto/gddoexp"},
 					Suppress: true,
 					Cache:    true,
 				},
@@ -1229,7 +1229,7 @@ type bySuppressResponsePath []gddoexp.SuppressResponse
 
 func (b bySuppressResponsePath) Len() int           { return len(b) }
 func (b bySuppressResponsePath) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
-func (b bySuppressResponsePath) Less(i, j int) bool { return b[i].Path < b[j].Path }
+func (b bySuppressResponsePath) Less(i, j int) bool { return b[i].Package.Path < b[j].Package.Path }
 
 type byFastForkResponsePath []gddoexp.FastForkResponse
 

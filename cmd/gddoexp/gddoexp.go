@@ -91,9 +91,9 @@ func main() {
 		if response.Error != nil {
 			log.Println(response.Error)
 		} else if response.Suppress {
-			log.Printf("package “%s” should be suppressed\n", response.Path)
+			log.Printf("package “%s” should be suppressed\n", response.Package.Path)
 			if progress != nil && !*progress {
-				fmt.Println(response.Path)
+				fmt.Println(response.Package.Path)
 			}
 		}
 	}
