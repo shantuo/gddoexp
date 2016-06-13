@@ -6,12 +6,10 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 
 	"github.com/cheggaaa/pb"
 	"github.com/golang/gddo/database"
 	"github.com/gregjones/httpcache"
-	"github.com/gregjones/httpcache/diskcache"
 	"github.com/rafaeljusto/gddoexp"
 )
 
@@ -22,32 +20,9 @@ func init() {
 }
 
 func main() {
-	clientID := flag.String("id", "", "Github client ID")
-	clientSecret := flag.String("secret", "", "Github client secret")
 	output := flag.String("output", "gddoexp.out", "Output file")
 	progress := flag.Bool("progress", false, "Show a progress bar")
 	flag.Parse()
-
-	var auth *gddoexp.GithubAuth
-	if (clientID != nil && *clientID != "") || (clientSecret != nil && *clientSecret != "") {
-		if *clientID == "" || *clientSecret == "" {
-			fmt.Println("to enable Gthub authentication, you need to inform the id and secret")
-			flag.PrintDefaults()
-			return
-		}
-
-		auth = &gddoexp.GithubAuth{
-			ID:     *clientID,
-			Secret: *clientSecret,
-		}
-	}
-
-	// add cache to avoid repeated requests to Github
-	gddoexp.HTTPClient = &http.Client{
-		Transport: httpcache.NewTransport(
-			diskcache.New(path.Join(os.Getenv("HOME"), ".gddoexp")),
-		),
-	}
 
 	db, err := database.New()
 	if err != nil {
@@ -79,7 +54,7 @@ func main() {
 
 	var cache int
 
-	for response := range gddoexp.ShouldSuppressPackages(pkgs, db, auth) {
+	for response := range gddoexp.ShouldSuppressPackages(pkgs, db) {
 		if progress != nil && *progress {
 			progressBar.Increment()
 		}

@@ -1,10 +1,12 @@
 package gddoexp
 
 import (
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/golang/gddo/database"
+	"github.com/google/go-github/github"
 )
 
 // unused stores the time that an unmodified project is considered unused.
@@ -40,9 +42,12 @@ type SuppressResponse struct {
 
 // ShouldSuppressPackage determinate if a package should be suppressed or not.
 // It's necessary to inform the GoDoc database to retrieve current stored
-// package information. An optional argument with the Github authentication
-// can be informed to allow more checks per minute in Github API.
-func ShouldSuppressPackage(p database.Package, db gddoDB, auth *GithubAuth) (suppress, cache bool, err error) {
+// package information.
+func ShouldSuppressPackage(p database.Package, db gddoDB) (suppress, cache bool, err error) {
+	if !strings.HasPrefix(p.Path, "github.com") {
+		return false, true, NewError(p.Path, ErrorCodeNonGithub, nil)
+	}
+
 	count, err := db.ImporterCount(p.Path)
 	if err != nil {
 		// as we didn't perform any request yet, we can return a cache hit to
@@ -58,7 +63,7 @@ func ShouldSuppressPackage(p database.Package, db gddoDB, auth *GithubAuth) (sup
 		return false, true, nil
 	}
 
-	repository, cacheRepository, err := getGithubRepository(p.Path, auth)
+	repository, cacheRepository, err := getGithubRepository(p.Path)
 	if err != nil {
 		return false, cacheRepository, err
 	}
@@ -66,24 +71,22 @@ func ShouldSuppressPackage(p database.Package, db gddoDB, auth *GithubAuth) (sup
 	// we only suppress the package if there's no reference to it from other
 	// projects (checked above) and if there's no updates in Github on the last
 	// 2 years
-	if time.Now().Sub(repository.UpdatedAt) >= unused {
+	if time.Now().Sub(repository.UpdatedAt.Time) >= unused {
 		return true, cacheRepository, nil
 	}
 
 	// we will check if the package is a fork with a few commits for a pull
 	// request, if so we consider it a fast fork and is eligible to be
 	// suppressed
-	fastFork, cacheFastFork, err := isFastForkPackage(p, auth, repository)
+	fastFork, cacheFastFork, err := isFastForkPackage(p, repository)
 	return fastFork, cacheRepository && cacheFastFork, err
 }
 
 // ShouldSuppressPackages determinate if a package should be suppressed or not,
 // but unlike ShouldSuppressPackage, it can process a list of packages
 // concurrently. It's necessary to inform the GoDoc database to retrieve
-// current stored package information. An optional argument with the Github
-// authentication can be informed to allow more checks per minute in Github
-// API.
-func ShouldSuppressPackages(packages []database.Package, db gddoDB, auth *GithubAuth) <-chan SuppressResponse {
+// current stored package information.
+func ShouldSuppressPackages(packages []database.Package, db gddoDB) <-chan SuppressResponse {
 	out := make(chan SuppressResponse, agents)
 
 	go func() {
@@ -95,7 +98,7 @@ func ShouldSuppressPackages(packages []database.Package, db gddoDB, auth *Github
 		for i := 0; i < agents; i++ {
 			go func() {
 				for p := range in {
-					suppress, cache, err := ShouldSuppressPackage(p, db, auth)
+					suppress, cache, err := ShouldSuppressPackage(p, db)
 					out <- SuppressResponse{
 						Package:  p,
 						Suppress: suppress,
@@ -130,28 +133,27 @@ type FastForkResponse struct {
 }
 
 // IsFastForkPackage identifies if a package is a fork created only to make
-// small changes for a pull request. An optional argument with the Github
-// authentication can be informed to allow more checks per minute in Github API.
-func IsFastForkPackage(p database.Package, auth *GithubAuth) (fastFork, cache bool, err error) {
-	repository, cacheRepository, err := getGithubRepository(p.Path, auth)
+// small changes for a pull request.
+func IsFastForkPackage(p database.Package) (fastFork, cache bool, err error) {
+	repository, cacheRepository, err := getGithubRepository(p.Path)
 	if err != nil {
 		return false, cacheRepository, err
 	}
 
-	fastFork, cache, err = isFastForkPackage(p, auth, repository)
+	fastFork, cache, err = isFastForkPackage(p, repository)
 	return fastFork, cache && cacheRepository, err
 }
 
 // isFastForkPackage is the low level function that will actually check if
 // the package is a fast fork. It receives the repository information so we can
 // reuse it with the function ShouldSuppressPackage.
-func isFastForkPackage(p database.Package, auth *GithubAuth, repository githubRepository) (fastFork, cache bool, err error) {
+func isFastForkPackage(p database.Package, repository *github.Repository) (fastFork, cache bool, err error) {
 	// if the repository is not a fork we don't need to check the commits
-	if !repository.Fork {
+	if !*repository.Fork {
 		return false, true, nil
 	}
 
-	commits, cache, err := getCommits(p.Path, auth)
+	commits, cache, err := getCommits(p.Path)
 	if err != nil {
 		return false, cache, err
 	}
@@ -166,7 +168,7 @@ func isFastForkPackage(p database.Package, auth *GithubAuth, repository githubRe
 			break
 		}
 
-		if commit.Commit.Author.Date.After(repository.CreatedAt) {
+		if commit.Commit.Author.Date.After(repository.CreatedAt.Time) {
 			commitCounts++
 		}
 	}
@@ -180,10 +182,8 @@ func isFastForkPackage(p database.Package, auth *GithubAuth, repository githubRe
 
 // AreFastForkPackages determinate if a package is a fast fork or not,
 // but unlike IsFastForkPackage, it can process a list of packages
-// concurrently. An optional argument with the Github authentication can be
-// informed to allow more checks per minute in Github API (we will use token
-// bucket strategy to don't exceed the rate limit).
-func AreFastForkPackages(packages []database.Package, auth *GithubAuth) <-chan FastForkResponse {
+// concurrently.
+func AreFastForkPackages(packages []database.Package) <-chan FastForkResponse {
 	out := make(chan FastForkResponse, agents)
 
 	go func() {
@@ -195,7 +195,7 @@ func AreFastForkPackages(packages []database.Package, auth *GithubAuth) <-chan F
 		for i := 0; i < agents; i++ {
 			go func() {
 				for p := range in {
-					fastFork, cache, err := IsFastForkPackage(p, auth)
+					fastFork, cache, err := IsFastForkPackage(p)
 					out <- FastForkResponse{
 						Path:     p.Path,
 						FastFork: fastFork,
