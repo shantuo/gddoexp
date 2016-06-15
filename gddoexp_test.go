@@ -23,7 +23,6 @@ func TestShouldSuppressPackage(t *testing.T) {
 		description   string
 		path          string
 		db            databaseMock
-		auth          *gddoexp.GithubAuth
 		httpClient    httpClientMock
 		expected      bool
 		expectedCache bool
@@ -100,10 +99,6 @@ func TestShouldSuppressPackage(t *testing.T) {
 				importerCountMock: func(path string) (int, error) {
 					return 0, nil
 				},
-			},
-			auth: &gddoexp.GithubAuth{
-				ID:     "exampleuser",
-				Secret: "abc123",
 			},
 			httpClient: httpClientMock{
 				getMock: func(url string) (*http.Response, error) {
@@ -365,9 +360,9 @@ func TestShouldSuppressPackage(t *testing.T) {
 		},
 	}
 
-	httpClientBkp := gddoexp.HTTPClient
+	httpClientBkp := gddoexp.GHClient
 	defer func() {
-		gddoexp.HTTPClient = httpClientBkp
+		gddoexp.GHClient = httpClientBkp
 	}()
 
 	isCacheResponseBkp := gddoexp.IsCacheResponse
@@ -379,13 +374,13 @@ func TestShouldSuppressPackage(t *testing.T) {
 	}
 
 	for i, item := range data {
-		gddoexp.HTTPClient = item.httpClient
+		gddoexp.GHClient = item.httpClient
 
 		p := database.Package{
 			Path: item.path,
 		}
 
-		suppress, cache, err := gddoexp.ShouldSuppressPackage(p, item.db, item.auth)
+		suppress, cache, err := gddoexp.ShouldSuppressPackage(p, item.db)
 
 		if suppress != item.expected {
 			if item.expected {
@@ -414,7 +409,6 @@ func TestShouldSuppressPackages(t *testing.T) {
 		description string
 		packages    []database.Package
 		db          databaseMock
-		auth        *gddoexp.GithubAuth
 		httpClient  httpClientMock
 		expected    []gddoexp.SuppressResponse
 	}{
@@ -482,10 +476,6 @@ func TestShouldSuppressPackages(t *testing.T) {
 				importerCountMock: func(path string) (int, error) {
 					return 0, nil
 				},
-			},
-			auth: &gddoexp.GithubAuth{
-				ID:     "exampleuser",
-				Secret: "abc123",
 			},
 			httpClient: httpClientMock{
 				getMock: func(url string) (*http.Response, error) {
@@ -591,9 +581,9 @@ func TestShouldSuppressPackages(t *testing.T) {
 		},
 	}
 
-	httpClientBkp := gddoexp.HTTPClient
+	httpClientBkp := gddoexp.GHClient
 	defer func() {
-		gddoexp.HTTPClient = httpClientBkp
+		gddoexp.GHClient = httpClientBkp
 	}()
 
 	isCacheResponseBkp := gddoexp.IsCacheResponse
@@ -605,10 +595,10 @@ func TestShouldSuppressPackages(t *testing.T) {
 	}
 
 	for i, item := range data {
-		gddoexp.HTTPClient = item.httpClient
+		gddoexp.GHClient = item.httpClient
 
 		var responses []gddoexp.SuppressResponse
-		for response := range gddoexp.ShouldSuppressPackages(item.packages, item.db, item.auth) {
+		for response := range gddoexp.ShouldSuppressPackages(item.packages, item.db) {
 			responses = append(responses, response)
 		}
 
@@ -623,7 +613,6 @@ func TestIsFastForkPackage(t *testing.T) {
 	data := []struct {
 		description   string
 		path          string
-		auth          *gddoexp.GithubAuth
 		httpClient    httpClientMock
 		expected      bool
 		expectedCache bool
@@ -669,10 +658,6 @@ func TestIsFastForkPackage(t *testing.T) {
 		{
 			description: "it should detect a fast fork package (authenticated)",
 			path:        "github.com/rafaeljusto/dns",
-			auth: &gddoexp.GithubAuth{
-				ID:     "exampleuser",
-				Secret: "abc123",
-			},
 			httpClient: httpClientMock{
 				getMock: func(url string) (*http.Response, error) {
 					if url == "https://api.github.com/repos/rafaeljusto/dns?client_id=exampleuser&client_secret=abc123" {
@@ -862,9 +847,9 @@ func TestIsFastForkPackage(t *testing.T) {
 		},
 	}
 
-	httpClientBkp := gddoexp.HTTPClient
+	httpClientBkp := gddoexp.GHClient
 	defer func() {
-		gddoexp.HTTPClient = httpClientBkp
+		gddoexp.GHClient = httpClientBkp
 	}()
 
 	isCacheResponseBkp := gddoexp.IsCacheResponse
@@ -876,13 +861,13 @@ func TestIsFastForkPackage(t *testing.T) {
 	}
 
 	for i, item := range data {
-		gddoexp.HTTPClient = item.httpClient
+		gddoexp.GHClient = item.httpClient
 
 		p := database.Package{
 			Path: item.path,
 		}
 
-		fastFork, cache, err := gddoexp.IsFastForkPackage(p, item.auth)
+		fastFork, cache, err := gddoexp.IsFastForkPackage(p)
 
 		if fastFork != item.expected {
 			if item.expected {
@@ -910,7 +895,6 @@ func TestAreFastForkPackages(t *testing.T) {
 	data := []struct {
 		description string
 		packages    []database.Package
-		auth        *gddoexp.GithubAuth
 		httpClient  httpClientMock
 		expected    []gddoexp.FastForkResponse
 	}{
@@ -980,10 +964,6 @@ func TestAreFastForkPackages(t *testing.T) {
 				{Path: "github.com/rafaeljusto/mysql"},
 				{Path: "github.com/rafaeljusto/handy"},
 				{Path: "github.com/rafaeljusto/schema"},
-			},
-			auth: &gddoexp.GithubAuth{
-				ID:     "exampleuser",
-				Secret: "abc123",
 			},
 			httpClient: httpClientMock{
 				getMock: func(url string) (*http.Response, error) {
@@ -1174,9 +1154,9 @@ func TestAreFastForkPackages(t *testing.T) {
 		},
 	}
 
-	httpClientBkp := gddoexp.HTTPClient
+	httpClientBkp := gddoexp.GHClient
 	defer func() {
-		gddoexp.HTTPClient = httpClientBkp
+		gddoexp.GHClient = httpClientBkp
 	}()
 
 	isCacheResponseBkp := gddoexp.IsCacheResponse
@@ -1188,10 +1168,10 @@ func TestAreFastForkPackages(t *testing.T) {
 	}
 
 	for i, item := range data {
-		gddoexp.HTTPClient = item.httpClient
+		gddoexp.GHClient = item.httpClient
 
 		var responses []gddoexp.FastForkResponse
-		for response := range gddoexp.AreFastForkPackages(item.packages, item.auth) {
+		for response := range gddoexp.AreFastForkPackages(item.packages) {
 			responses = append(responses, response)
 		}
 

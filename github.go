@@ -1,7 +1,6 @@
 package gddoexp
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"path"
@@ -21,23 +20,14 @@ var GHClient *github.Client
 var IsCacheResponse func(*http.Response) bool
 
 func init() {
-	if t := os.Getenv("GITHUB_TOKEN"); t != "" {
-		t := &github.UnauthenticatedRateLimitedTransport{
-			ClientID:     os.Getenv("GITHUB_CLIENT_ID"),
-			ClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
-			Transport: httpcache.NewTransport(
-				diskcache.New(path.Join(os.Getenv("HOME"), ".gddoexp")),
-			),
-		}
-		GHClient = github.NewClient(t.Client())
-		if lm, _, err := GHClient.RateLimits(); err != nil {
-			panic(err)
-		} else {
-			fmt.Println("RateLimits:", lm.Core.Limit)
-		}
-	} else {
-		GHClient = github.NewClient(nil)
+	t := &github.UnauthenticatedRateLimitedTransport{
+		ClientID:     os.Getenv("GITHUB_CLIENT_ID"),
+		ClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
+		Transport: httpcache.NewTransport(
+			diskcache.New(path.Join(os.Getenv("HOME"), ".gddoexp")),
+		),
 	}
+	GHClient = github.NewClient(t.Client())
 }
 
 func getGithubRepository(path string) (*github.Repository, bool, error) {
@@ -45,8 +35,10 @@ func getGithubRepository(path string) (*github.Repository, bool, error) {
 	repository, response, err := GHClient.Repositories.Get(owner, repo)
 	if err, ok := err.(*github.RateLimitError); ok {
 		t := err.Rate.Reset
-		fmt.Println("Reach API Limit, will resume at", t.Format(time.RFC1123))
 		time.Sleep(t.Sub(time.Now()))
+		return getGithubRepository(path)
+	} else if response != nil && response.Response.StatusCode == 403 {
+		time.Sleep(time.Minute)
 		return getGithubRepository(path)
 	} else if err != nil {
 		return nil, true, err
@@ -67,11 +59,18 @@ func getCommits(path string) ([]github.RepositoryCommit, bool, error) {
 	owner, repo := parse(path)
 	opt := &github.CommitsListOptions{
 		Path:  path,
-		Since: time.Now().Add(-2 * 365 * 24 * time.Hour),
+		Since: time.Now().Add(-unused),
 		Until: time.Now(),
 	}
 	commits, response, err := GHClient.Repositories.ListCommits(owner, repo, opt)
-	if err != nil {
+	if err, ok := err.(*github.RateLimitError); ok {
+		t := err.Rate.Reset
+		time.Sleep(t.Sub(time.Now()))
+		return getCommits(path)
+	} else if response != nil && response.Response.StatusCode == 403 {
+		time.Sleep(time.Minute)
+		return getCommits(path)
+	} else if err != nil {
 		return nil, true, err
 	}
 
